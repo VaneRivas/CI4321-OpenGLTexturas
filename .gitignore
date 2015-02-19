@@ -5,3 +5,8 @@
 *.log
 *.lastbuildstate
 *.exe
+*.sdf
+*.sln
+*.vcxproj
+*.user
+*.filters
