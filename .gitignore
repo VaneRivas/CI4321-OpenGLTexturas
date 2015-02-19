@@ -1,0 +1,7 @@
+*.tlog
+*.ilk
+*.pdb
+*.idb
+*.log
+*.lastbuildstate
+*.exe
