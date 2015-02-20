@@ -122,10 +122,11 @@ float cutOff = 50.0f,
 	  conejo_CompR = 1.0f,
 	  conejo_CompG = 1.0f,
 	  conejo_CompB = 1.0f,
+	  Intensity_luz =1.0f,
 	  luz_CompR=1.0f,
 	  luz_CompG=1.0f,
 	  luz_CompB=1.0f;
-
+		
 
 bool reflexion = true,
 	iluminacion = true;
@@ -364,7 +365,7 @@ void cube_map( char* PosX,  char* PosY, char* PosZ,char* NegX,  char* NegY, char
 
 	// Now we re-create the textures to texturize the planes
 	
-	/*
+	
 
 	//-------------------------------------------------------------------------------------
 	// Create plane texture, postive X
@@ -381,7 +382,7 @@ void cube_map( char* PosX,  char* PosY, char* PosZ,char* NegX,  char* NegY, char
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	// Create plane texture, postive X
 
-	*/
+	
 	glGenTextures(1,&planeTexPosY);
 	glBindTexture(GL_TEXTURE_2D,planeTexPosY);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthPosy, iheightPosy, 0, GL_RGB, GL_UNSIGNED_BYTE, imgPositiveY);
@@ -509,16 +510,18 @@ void render(){
 	gluLookAt (0, 80, 250, 0.0, 15.0, 0.0, 0.0, 1.0, 0.0);
 
 	//cube_map("posx.ppm","posy.ppm","posz.ppm","negx.ppm","negy.ppm","negz.ppm");
+	
+	//----------------------ambiente del conejo
 	float mdiffuse1[] = {conejo_CompR,conejo_CompG,conejo_CompB,1};
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse1);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, mdiffuse1);
+	//--------------------------------------------------------
 
-	GLfloat light1_ambient[] =  {0.0f, 0.0f, 0.0f, 1.0f};
-	//GLfloat light1_diffuse[] =  {luz_CompR, luz_CompR, luz_CompR, 1.0f};
-	GLfloat light1_diffuse[] =  {1.0f, 1.0f, 1.0f, 1.0f};
+	GLfloat light1_ambient[] =  {0.0f, 0.0f, 0.0f, 0.0f};
+	GLfloat light1_diffuse[] =  {Intensity_luz, Intensity_luz, Intensity_luz, Intensity_luz/Intensity_luz};
 	GLfloat light1_position[] = {0.0f, 200.0f, 0.0f, 1.0f};
 	GLfloat light1_direction[] = {spot_light_x,-1.0f, spot_light_z};
-	GLfloat light_specular[] = { 1.0, 1.0, 0.3, 0.0 };
+	GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
 
 
    	glLightfv(GL_LIGHT0, GL_AMBIENT, light1_ambient);
@@ -530,13 +533,13 @@ void render(){
 	glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent);
 	glEnable(GL_LIGHT0);
 	
-	cube_map("posx.ppm","posy.ppm","posz.ppm","negx.ppm","negy.ppm","negz.ppm");
+	//cube_map("posx.ppm","posy.ppm","posz.ppm","negx.ppm","negy.ppm","negz.ppm");
 	//loadCubemap(faces); 
 
 	glPushMatrix();
 	glRotated(180,0.0,0.0,1.0);
 	
-	Draw_Skybox(0,0,0,500,500,500);	// Draw the Skybox
+	//Draw_Skybox(0,0,0,500,500,500);	// Draw the Skybox
 	glPopMatrix();
 	 
 
@@ -658,7 +661,7 @@ void imprimirEstado() {
 	cout << "Color Conejo canal R [t/g]: " << conejo_CompR << "\n";
 	cout << "Color Conejo canal G [y/h]: " << conejo_CompG << "\n";
 	cout << "Color Conejo canal B [u/j]: " << conejo_CompB << "\n";
-	cout << " Intensidad de la luz [b/n]: " << "INTENSIDAD DE LA LUZ" << "\n";
+	cout << " Intensidad de la luz [b/n]: " << Intensity_luz << "\n";
 	cout << "Color Blanco luz [1]: " << "ALGO" << "\n";
 	cout << "Color Rojo luz [2]: " <<  "ALGO" << "\n";
 	cout << "Color Verde luz [3]: " << "ALGO" << "\n";
@@ -752,10 +755,10 @@ void Keyboard(unsigned char key, int x, int y)
 			break;
 		}
 	case 'b':
-		
+		Intensity_luz += 1.0f;
 		break;
 	case 'n':
-		
+		Intensity_luz -= 1.0f;
 		break;
 	case '1':
 		luz_CompR=1.0f;
