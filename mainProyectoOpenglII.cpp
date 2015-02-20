@@ -47,9 +47,19 @@ static GLuint texName4;
 int iheight4, iwidth4;
 unsigned char* image4 = NULL;
 
-float light_x = 0.0f,
-		light_y = 0.0f,
-		light_z = 0.0f;
+float cutOff = 50.0f,
+	  exponent = 25.0f,
+	  compAmbient = 1.0f,
+	  spot_light_x = 0.0f,
+	  spot_light_y = -1.0f,
+	  conejo_CompR = 1.0f,
+	  conejo_CompG = 1.0f,
+	  conejo_CompB = 1.0f,
+	  luz_CompR=1.0f,
+	  luz_CompG=1.0f,
+	  luz_CompB=1.0f;
+	
+  	
 
 void changeViewport(int w, int h) {
 	
@@ -72,7 +82,6 @@ void init(){
    glEnable(GL_LIGHT0);
    glEnable(GL_DEPTH_TEST);
 
-  
 }
 
 
@@ -100,8 +109,7 @@ void cargar_materiales(int idx) {
 
 	// Material Columna
 	if (idx == 1){
-		//float mdiffuse2[] = {0,1,0,1};
-		//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse2);
+	
 		glGenTextures(1, &texName2);
 		glBindTexture(GL_TEXTURE_2D, texName2);
 
@@ -120,11 +128,11 @@ void cargar_materiales(int idx) {
 	}
 
 	// Material Conejo
-	
+
 	if (idx == 2){
 	//float mdiffuse1[] = {1,0,0,1};
-	//float mdiffuse1[] = {1,1,1,1};
-	//	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse1);
+	float mdiffuse1[] = {conejo_CompR,conejo_CompG,conejo_CompB,1};
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse1);
 		glGenTextures(1, &texName4);
 		glBindTexture(GL_TEXTURE_2D, texName4);
 
@@ -210,22 +218,6 @@ void recursive_render (const aiScene *sc, const aiNode* nd)
 }
 
 
-void Keyboard(unsigned char key, int x, int y)
-{
-  switch (key)
-  {
-	case 27:             
-		exit (0);
-		break;
-	case 'q':
-		light_x = 0.0;
-
-  };
-
-  scene_list = 0;
-  glutPostRedisplay();
-}
-
 
 void render(){
 	glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -234,21 +226,23 @@ void render(){
 
 	glLoadIdentity ();                       
 	gluLookAt (0, 80, 250, 0.0, 15.0, 0.0, 0.0, 1.0, 0.0);
-	
 
+
+	
 	GLfloat light1_ambient[] =  {0.0f, 0.0f, 0.0f, 1.0f};
-  	GLfloat light1_diffuse[] =  {1.0f, 1.0f, 1.0f, 1.0f};
-  	GLfloat light1_position[] = {0.0f, 200.0f, 0.0f, 1.0f};
-  	GLfloat light1_direction[] = {0.0f,-1.0f, 0.0f};
+	GLfloat light1_diffuse[] =  {luz_CompR, luz_CompR, luz_CompR, 1.0f};
+	GLfloat light1_position[] = {0.0f, 200.0f, 0.0f, 1.0f};
+	GLfloat light1_direction[] = {spot_light_x,spot_light_y, 0.0f};
 	GLfloat light_specular[] = { 1.0, 1.0, 0.3, 0.0 };
-   	
+
+
    	glLightfv(GL_LIGHT0, GL_AMBIENT, light1_ambient);
    	glLightfv(GL_LIGHT0, GL_DIFFUSE, light1_diffuse);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
    	glLightfv(GL_LIGHT0, GL_POSITION, light1_position);
    	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light1_direction);
-   	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 50.0f);
-   	glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, 25.0f);
+	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutOff);
+	glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent);
 	glEnable(GL_LIGHT0);
 	
 
@@ -359,6 +353,100 @@ int loadasset (const char* path)
 	return 1;
 }
 
+
+void Keyboard(unsigned char key, int x, int y)
+{
+  switch (key)
+  {
+	case 27:             
+		exit (0);
+		break;
+	case 'q':
+		cutOff += 1.0f;
+		break;
+	case 'w':
+		cutOff -= 1.0f;
+		break;
+	case 'a':
+		exponent += 0.5f;
+		break;
+	case 's':
+		exponent -= 0.5f;
+		break;
+	case 'z':
+		compAmbient += 0.1f;
+		break;
+	case 'x':
+		compAmbient -= 0.1f;
+		break;
+	case 'e':
+		spot_light_x += 0.1f;
+		break;
+	case 'd':
+		spot_light_x -= 0.1f;
+		break;
+	case 'r':
+		spot_light_y += 0.1f;
+		break;
+	case 'f':
+		spot_light_y -= 0.1f;
+		break;
+	case 't':
+		conejo_CompR += 0.1f;
+		break;
+	case 'g':
+		conejo_CompR -= 0.1f;
+		break;
+	case 'y':
+		conejo_CompG += 0.1f;
+		break;
+	case 'h':
+		conejo_CompG -= 0.1f;
+		break;
+	case 'u':
+		conejo_CompB += 0.1f;
+		break;
+	case 'j':
+		conejo_CompB -= 0.1f;
+		break;
+	case 'c':
+		
+		break;
+	case 'v':
+		
+		break;
+	case 'b':
+		
+		break;
+	case 'n':
+		
+		break;
+	case '1':
+		luz_CompR=1.0f;
+		luz_CompG=1.0f;
+		luz_CompB=1.0f;
+		break;
+	case '2':
+		luz_CompR=1.0f;
+		luz_CompG=0.0f;
+		luz_CompB=0.0f;
+		break;
+	case '3':
+		luz_CompR=0.0f;
+		luz_CompG=1.0f;
+		luz_CompB=0.0f;
+		break;
+	case '4':
+		luz_CompR=0.0f;
+		luz_CompG=0.0f;
+		luz_CompB=1.0f;
+		break;
+
+  };
+
+  scene_list = 0;
+  glutPostRedisplay();
+}
 int main (int argc, char** argv) {
 
 	glutInit(&argc, argv);
