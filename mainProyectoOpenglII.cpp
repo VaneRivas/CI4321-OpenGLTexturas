@@ -51,14 +51,15 @@ float cutOff = 50.0f,
 	  exponent = 25.0f,
 	  compAmbient = 1.0f,
 	  spot_light_x = 0.0f,
-	  spot_light_y = -1.0f,
+	  spot_light_z = 0.0f,
 	  conejo_CompR = 1.0f,
 	  conejo_CompG = 1.0f,
 	  conejo_CompB = 1.0f,
 	  luz_CompR=1.0f,
 	  luz_CompG=1.0f,
 	  luz_CompB=1.0f;
-	
+
+
   	
 
 void changeViewport(int w, int h) {
@@ -132,6 +133,8 @@ void cargar_materiales(int idx) {
 	if (idx == 2){
 	//float mdiffuse1[] = {1,0,0,1};
 	float mdiffuse1[] = {conejo_CompR,conejo_CompG,conejo_CompB,1};
+	
+	
 		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse1);
 		glGenTextures(1, &texName4);
 		glBindTexture(GL_TEXTURE_2D, texName4);
@@ -153,10 +156,7 @@ void cargar_materiales(int idx) {
 		
 		
 	}
-
-
-	
-
+		
 }
 
 void recursive_render (const aiScene *sc, const aiNode* nd)
@@ -227,12 +227,12 @@ void render(){
 	glLoadIdentity ();                       
 	gluLookAt (0, 80, 250, 0.0, 15.0, 0.0, 0.0, 1.0, 0.0);
 
-
-	
+		
 	GLfloat light1_ambient[] =  {0.0f, 0.0f, 0.0f, 1.0f};
-	GLfloat light1_diffuse[] =  {luz_CompR, luz_CompR, luz_CompR, 1.0f};
+	//GLfloat light1_diffuse[] =  {luz_CompR, luz_CompR, luz_CompR, 1.0f};
+	GLfloat light1_diffuse[] =  {1.0f, 1.0f, 0.0f, 1.0f};
 	GLfloat light1_position[] = {0.0f, 200.0f, 0.0f, 1.0f};
-	GLfloat light1_direction[] = {spot_light_x,spot_light_y, 0.0f};
+	GLfloat light1_direction[] = {spot_light_x,-1.0f, spot_light_z};
 	GLfloat light_specular[] = { 1.0, 1.0, 0.3, 0.0 };
 
 
@@ -245,6 +245,11 @@ void render(){
 	glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent);
 	glEnable(GL_LIGHT0);
 	
+
+	/// Componente ambiental de los objetos
+		//GLfloat mat_ambient[] = { 0.28, 0.75, 0.82, 1.0 };	
+		GLfloat mat_ambient[] = { 0.0, 1.0, 0.0, 1.0 };	
+		glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
 
 
 	//Suaviza las lineas
@@ -353,7 +358,29 @@ int loadasset (const char* path)
 	return 1;
 }
 
-
+void imprimirEstado() {
+	cout << "\n\n\n\n\n\n\n\n";
+	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
+	cout << "Estado de las variables\n";
+	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
+	cout << "[x++/x--]\n\n";
+	cout << "cutOff del Spot Light [q/w]: " << cutOff << "\n";
+	cout << "exponente del SPot Light [a/s]: " << exponent << "\n";
+	cout << "comonente ambiental de cada modelo [z/x]: " << compAmbient << "\n";
+	cout << "direccion en el eje X del Spot Light [e/d]: " << spot_light_x << "\n";
+	cout << "direccion en el eje Z del Spot Light [r/f] : " << spot_light_z << "\n";
+	cout << "Color Conejo canal R [t/g]: " << conejo_CompR << "\n";
+	cout << "Color Conejo canal G [y/h]: " << conejo_CompG << "\n";
+	cout << "Color Conejo canal B [u/j]: " << conejo_CompB << "\n";
+	cout << " Intensidad de la luz [b/n]: " << "INTENSIDAD DE LA LUZ" << "\n";
+	cout << "Color Blanco luz [1]: " << "ALGO" << "\n";
+	cout << "Color Rojo luz [2]: " <<  "ALGO" << "\n";
+	cout << "Color Verde luz [3]: " << "ALGO" << "\n";
+	cout << "Color Azul luz [4]: " <<  "ALGO" << "\n";
+	cout << "Reflexion [c]: " << "(enable ? ""On : Off)" << "REFLEXION"<<"\n";
+	cout << "Iluminacion [v]: " << "(enableR ?" "On : Off)" <<"ILUMINACION"<< "\n";
+	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+}
 void Keyboard(unsigned char key, int x, int y)
 {
   switch (key)
@@ -362,7 +389,7 @@ void Keyboard(unsigned char key, int x, int y)
 		exit (0);
 		break;
 	case 'q':
-		cutOff += 1.0f;
+		cutOff += 100.0f;
 		break;
 	case 'w':
 		cutOff -= 1.0f;
@@ -386,10 +413,10 @@ void Keyboard(unsigned char key, int x, int y)
 		spot_light_x -= 0.1f;
 		break;
 	case 'r':
-		spot_light_y += 0.1f;
+		spot_light_z += 0.1f;
 		break;
 	case 'f':
-		spot_light_y -= 0.1f;
+		spot_light_z -= 0.1f;
 		break;
 	case 't':
 		conejo_CompR += 0.1f;
@@ -443,10 +470,14 @@ void Keyboard(unsigned char key, int x, int y)
 		break;
 
   };
-
+  imprimirEstado();
   scene_list = 0;
   glutPostRedisplay();
 }
+
+
+
+
 int main (int argc, char** argv) {
 
 	glutInit(&argc, argv);
