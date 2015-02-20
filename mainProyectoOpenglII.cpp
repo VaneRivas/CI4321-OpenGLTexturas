@@ -5,7 +5,7 @@
 #include <GL\glew.h>
 #include <GL\freeglut.h>
 #include <iostream>
-
+#include <vector>
 // assimp include files. These three are usually needed.
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
@@ -48,10 +48,6 @@ int iheight4, iwidth4;
 unsigned char* image4 = NULL;
 
 //------------------------
-
-
-int iheightPosx, iwidthPosx, iheightPosy, iwidthPosy, iheightPosz, iwidthPosz,
-	iheightNegx, iwidthNegx, iheightNegy, iwidthNegy, iheightNegz, iwidthNegz;
 unsigned char* imgPositiveX  = NULL;
 unsigned char* imgNegativeX = NULL;
 unsigned char* imgPositiveY = NULL;
@@ -268,55 +264,21 @@ void recursive_render (const aiScene *sc, const aiNode* nd)
 	glPopMatrix();
 }
 
-
-
-void render(){
-	glClearColor(0.0, 0.0, 0.0, 0.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-	glLoadIdentity ();                       
-	gluLookAt (0, 80, 250, 0.0, 15.0, 0.0, 0.0, 1.0, 0.0);
-
-	
-	float mdiffuse1[] = {conejo_CompR,conejo_CompG,conejo_CompB,1};
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse1);
-	glMaterialfv(GL_FRONT, GL_AMBIENT, mdiffuse1);
-
-	GLfloat light1_ambient[] =  {0.0f, 0.0f, 0.0f, 1.0f};
-	//GLfloat light1_diffuse[] =  {luz_CompR, luz_CompR, luz_CompR, 1.0f};
-	GLfloat light1_diffuse[] =  {1.0f, 1.0f, 1.0f, 1.0f};
-	GLfloat light1_position[] = {0.0f, 200.0f, 0.0f, 1.0f};
-	GLfloat light1_direction[] = {spot_light_x,-1.0f, spot_light_z};
-	GLfloat light_specular[] = { 1.0, 1.0, 0.3, 0.0 };
-
-
-   	glLightfv(GL_LIGHT0, GL_AMBIENT, light1_ambient);
-   	glLightfv(GL_LIGHT0, GL_DIFFUSE, light1_diffuse);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-   	glLightfv(GL_LIGHT0, GL_POSITION, light1_position);
-   	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light1_direction);
-	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutOff);
-	glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent);
-	glEnable(GL_LIGHT0);
-	
-
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void cube_map( char* PosX,  char* PosY, char* PosZ,char* NegX,  char* NegY, char* NegZ) {
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	
 	// Create and load the 6 textures of the cube map
 
-
-	
 	
 	int iheightPosx, iwidthPosx, iheightPosy, iwidthPosy, iheightPosz, iwidthPosz,
 	iheightNegx, iwidthNegx, iheightNegy, iwidthNegy, iheightNegz, iwidthNegz;
 
-	imgPositiveX = glmReadPPM("posx.ppm", &iwidthPosx, &iheightPosx);
-	imgNegativeX = glmReadPPM("negx.ppm", &iwidthNegx, &iheightNegx);
-	imgPositiveY = glmReadPPM("posy.ppm", &iwidthPosy, &iheightPosy);
-	imgNegativeY = glmReadPPM("negy.ppm", &iwidthNegy, &iheightNegy);
-	imgPositiveZ = glmReadPPM("posz.ppm", &iwidthPosz, &iheightPosz);
-	imgNegativeZ = glmReadPPM("negz.ppm", &iwidthNegz, &iheightNegz);
+	imgPositiveX = glmReadPPM(PosX, &iwidthPosx, &iheightPosx);
+	imgNegativeX = glmReadPPM(NegX, &iwidthNegx, &iheightNegx);
+	imgPositiveY = glmReadPPM(PosY, &iwidthPosy, &iheightPosy);
+	imgNegativeY = glmReadPPM(NegY, &iwidthNegy, &iheightNegy);
+	imgPositiveZ = glmReadPPM(PosZ, &iwidthPosz, &iheightPosz);
+	imgNegativeZ = glmReadPPM(NegZ, &iwidthNegz, &iheightNegz);
 
 
 
@@ -397,16 +359,65 @@ glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 
 
+	}
+
+GLuint loadCubemap(vector<char*> faces){
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glActiveTexture(GL_TEXTURE0);
+
+    int width,height;
+    unsigned char* image;
+	
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+    for(GLuint i = 0; i < faces.size(); i++)
+    {
+       	image = glmReadPPM(faces[i], &iwidth, &iheight);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image );
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+    return textureID;
+}  
 
 
+void render(){
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
+	glLoadIdentity ();                       
+	gluLookAt (0, 80, 250, 0.0, 15.0, 0.0, 0.0, 1.0, 0.0);
 
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	cube_map("posx.ppm","posy.ppm","posz.ppm","negx.ppm","negy.ppm","negz.ppm");
+	float mdiffuse1[] = {conejo_CompR,conejo_CompG,conejo_CompB,1};
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse1);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, mdiffuse1);
+
+	GLfloat light1_ambient[] =  {0.0f, 0.0f, 0.0f, 1.0f};
+	//GLfloat light1_diffuse[] =  {luz_CompR, luz_CompR, luz_CompR, 1.0f};
+	GLfloat light1_diffuse[] =  {1.0f, 1.0f, 1.0f, 1.0f};
+	GLfloat light1_position[] = {0.0f, 200.0f, 0.0f, 1.0f};
+	GLfloat light1_direction[] = {spot_light_x,-1.0f, spot_light_z};
+	GLfloat light_specular[] = { 1.0, 1.0, 0.3, 0.0 };
 
 
+   	glLightfv(GL_LIGHT0, GL_AMBIENT, light1_ambient);
+   	glLightfv(GL_LIGHT0, GL_DIFFUSE, light1_diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+   	glLightfv(GL_LIGHT0, GL_POSITION, light1_position);
+   	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light1_direction);
+	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutOff);
+	glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent);
+	glEnable(GL_LIGHT0);
+	
 
-
+	
 	//Suaviza las lineas
 	glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable( GL_LINE_SMOOTH );	
@@ -429,7 +440,6 @@ glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glPopMatrix();
 	
 
-
 	glDisable(GL_BLEND);
 	glDisable(GL_LINE_SMOOTH);
 	glutSwapBuffers();
@@ -441,6 +451,7 @@ void animacion(int value) {
     glutPostRedisplay();
 	
 }
+
 void get_bounding_box_for_node (const aiNode* nd, 
 	aiVector3D* min, 
 	aiVector3D* max, 
