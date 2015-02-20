@@ -12,6 +12,7 @@
 #include <assimp/postprocess.h>
 
 #include "glm.h"
+#define NELEMS(x)  (sizeof(x) / sizeof(x[0]))
 
 using namespace std;
 
@@ -30,6 +31,8 @@ aiVector3D scene_min, scene_max, scene_center;
 #define DEF_floorGridXSteps	10.0
 #define DEF_floorGridZSteps	10.0
 
+
+// Carga de textura de los objetos
 static GLuint texName;
 int iheight, iwidth;
 unsigned char* image = NULL;
@@ -38,16 +41,11 @@ static GLuint texName2;
 int iheight2, iwidth2;
 unsigned char* image2 = NULL;
 
-
-static GLuint texName3;
-int iheight3, iwidth3;
-unsigned char* image3 = NULL;
-
 static GLuint texName4;
 int iheight4, iwidth4;
 unsigned char* image4 = NULL;
 
-//------------------------
+//------------------------img de Cub mapping------------------
 unsigned char* imgPositiveX  = NULL;
 unsigned char* imgNegativeX = NULL;
 unsigned char* imgPositiveY = NULL;
@@ -58,14 +56,61 @@ unsigned char* imgNegativeZ = NULL;
 /* Cube map Texture ID's
 */
 static GLuint texPosY,texNegY,texPosZ,texNegZ,texPosX,texNegX;
+
+
+//---------------sky box --------------------------------------------
 /**
 * Plane texture ID's
 */
 static GLuint planeTexPosX,planeTexPosY,planeTexPosZ,planeTexNegX,planeTexNegY,planeTexNegZ;
 
+//---el otro intento de sky box :C--
+char* faces[] = {"posx.ppm","posy.ppm","posz.ppm","negx.ppm","negy.ppm","negz.ppm"};
 
-bool reflexion = true,
-	iluminacion = true;
+GLfloat skyboxVertices[] = {
+    // Positions          
+    -1.0f,  1.0f, -1.0f,
+    -1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    -1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f
+};
 
 
 //----------------------
@@ -82,7 +127,8 @@ float cutOff = 50.0f,
 	  luz_CompB=1.0f;
 
 
-  	
+bool reflexion = true,
+	iluminacion = true;
 
 void changeViewport(int w, int h) {
 	
@@ -310,15 +356,15 @@ void cube_map( char* PosX,  char* PosY, char* PosZ,char* NegX,  char* NegY, char
 
 	// Sets the texture's behavior for wrapping (optional)
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	// Sets the texture's max/min filters
 	glTexParameteri(GL_TEXTURE_CUBE_MAP,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 
 	// Now we re-create the textures to texturize the planes
 	
-
+	/*
 
 	//-------------------------------------------------------------------------------------
 	// Create plane texture, postive X
@@ -334,6 +380,8 @@ glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	// Create plane texture, postive X
+
+	*/
 	glGenTextures(1,&planeTexPosY);
 	glBindTexture(GL_TEXTURE_2D,planeTexPosY);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthPosy, iheightPosy, 0, GL_RGB, GL_UNSIGNED_BYTE, imgPositiveY);
@@ -358,11 +406,13 @@ glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 
-
+	
 	}
 
-GLuint loadCubemap(vector<char*> faces){
-    GLuint textureID;
+
+GLuint loadCubemap(char* faces[]){
+  
+	GLuint textureID;
     glGenTextures(1, &textureID);
     glActiveTexture(GL_TEXTURE0);
 
@@ -370,7 +420,7 @@ GLuint loadCubemap(vector<char*> faces){
     unsigned char* image;
 	
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-    for(GLuint i = 0; i < faces.size(); i++)
+    for(GLuint i = 0; i < NELEMS(faces); i++)
     {
        	image = glmReadPPM(faces[i], &iwidth, &iheight);
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image );
@@ -385,6 +435,70 @@ GLuint loadCubemap(vector<char*> faces){
     return textureID;
 }  
 
+void Draw_Skybox(float x, float y, float z, float width, float height, float length)
+{
+	// Center the Skybox around the given x,y,z position
+	x = x - width  / 2;
+	y = y - height / 2;
+	z = z - length / 2;
+
+
+	// Draw Front side
+	//glBindTexture(GL_TEXTURE_2D, SkyboxTexture[SKYFRONT]);
+	glBegin(GL_QUADS);	
+		glTexCoord2f(1.0f, 0.0f); glVertex3f(x,		  y,		z+length);
+		glTexCoord2f(1.0f, 1.0f); glVertex3f(x,		  y+height, z+length);
+		glTexCoord2f(0.0f, 1.0f); glVertex3f(x+width, y+height, z+length); 
+		glTexCoord2f(0.0f, 0.0f); glVertex3f(x+width, y,		z+length);
+	glEnd();
+
+	// Draw Back side
+	//glBindTexture(GL_TEXTURE_2D, SkyboxTexture[SKYBACK]);
+	glBegin(GL_QUADS);		
+		glTexCoord2f(1.0f, 0.0f); glVertex3f(x+width, y,		z);
+		glTexCoord2f(1.0f, 1.0f); glVertex3f(x+width, y+height, z); 
+		glTexCoord2f(0.0f, 1.0f); glVertex3f(x,		  y+height,	z);
+		glTexCoord2f(0.0f, 0.0f); glVertex3f(x,		  y,		z);
+	glEnd();
+
+	// Draw Left side
+	//glBindTexture(GL_TEXTURE_2D, SkyboxTexture[SKYLEFT]);
+	glBegin(GL_QUADS);		
+		glTexCoord2f(1.0f, 1.0f); glVertex3f(x,		  y+height,	z);	
+		glTexCoord2f(0.0f, 1.0f); glVertex3f(x,		  y+height,	z+length); 
+		glTexCoord2f(0.0f, 0.0f); glVertex3f(x,		  y,		z+length);
+		glTexCoord2f(1.0f, 0.0f); glVertex3f(x,		  y,		z);		
+	glEnd();
+
+	// Draw Right side
+	//glBindTexture(GL_TEXTURE_2D, SkyboxTexture[SKYRIGHT]);
+	glBegin(GL_QUADS);		
+		glTexCoord2f(0.0f, 0.0f); glVertex3f(x+width, y,		z);
+		glTexCoord2f(1.0f, 0.0f); glVertex3f(x+width, y,		z+length);
+		glTexCoord2f(1.0f, 1.0f); glVertex3f(x+width, y+height,	z+length); 
+		glTexCoord2f(0.0f, 1.0f); glVertex3f(x+width, y+height,	z);
+	glEnd();
+
+	// Draw Up side
+	//glBindTexture(GL_TEXTURE_2D, SkyboxTexture[SKYUP]);
+	glBegin(GL_QUADS);		
+		glTexCoord2f(0.0f, 0.0f); glVertex3f(x+width, y+height, z);
+		glTexCoord2f(1.0f, 0.0f); glVertex3f(x+width, y+height, z+length); 
+		glTexCoord2f(1.0f, 1.0f); glVertex3f(x,		  y+height,	z+length);
+		glTexCoord2f(0.0f, 1.0f); glVertex3f(x,		  y+height,	z);
+	glEnd();
+
+	// Draw Down side
+	//glBindTexture(GL_TEXTURE_2D, SkyboxTexture[SKYDOWN]);
+	glBegin(GL_QUADS);		
+		glTexCoord2f(0.0f, 0.0f); glVertex3f(x,		  y,		z);
+		glTexCoord2f(1.0f, 0.0f); glVertex3f(x,		  y,		z+length);
+		glTexCoord2f(1.0f, 1.0f); glVertex3f(x+width, y,		z+length); 
+		glTexCoord2f(0.0f, 1.0f); glVertex3f(x+width, y,		z);
+	glEnd();
+
+}
+
 
 void render(){
 	glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -394,7 +508,7 @@ void render(){
 	glLoadIdentity ();                       
 	gluLookAt (0, 80, 250, 0.0, 15.0, 0.0, 0.0, 1.0, 0.0);
 
-	cube_map("posx.ppm","posy.ppm","posz.ppm","negx.ppm","negy.ppm","negz.ppm");
+	//cube_map("posx.ppm","posy.ppm","posz.ppm","negx.ppm","negy.ppm","negz.ppm");
 	float mdiffuse1[] = {conejo_CompR,conejo_CompG,conejo_CompB,1};
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse1);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, mdiffuse1);
@@ -416,6 +530,15 @@ void render(){
 	glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent);
 	glEnable(GL_LIGHT0);
 	
+	cube_map("posx.ppm","posy.ppm","posz.ppm","negx.ppm","negy.ppm","negz.ppm");
+	//loadCubemap(faces); 
+
+	glPushMatrix();
+	glRotated(180,0.0,0.0,1.0);
+	
+	Draw_Skybox(0,0,0,500,500,500);	// Draw the Skybox
+	glPopMatrix();
+	 
 
 	
 	//Suaviza las lineas
