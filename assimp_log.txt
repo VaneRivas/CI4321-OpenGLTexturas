@@ -1,13 +1,13 @@
-Info,  T10028: Load escenario.obj
-Info,  T10028: Found a matching importer for this file format
-Info,  T10028: Import root directory is '.\'
-Info,  T10028: Entering post processing pipeline
-Error, T10028: Failed to triangulate polygon (no ear found). Probably not a simple polygon?
+Info,  T4152: Load escenario.obj
+Info,  T4152: Found a matching importer for this file format
+Info,  T4152: Import root directory is '.\'
+Info,  T4152: Entering post processing pipeline
+Error, T4152: Failed to triangulate polygon (no ear found). Probably not a simple polygon?
 Skipping one or more lines with the same contents
-Info,  T10028: TriangulateProcess finished. All polygons have been triangulated.
-Info,  T10028: Points: 0, Lines: 0, Triangles: 3, Polygons: 0 (Meshes, X = removed)
-Info,  T10028: GenVertexNormalsProcess finished. Vertex normals have been calculated
-Info,  T10028: CalcTangentsProcess finished. Tangents have been calculated
-Info,  T10028: JoinVerticesProcess finished | Verts in: 123454 out: 40530 | ~67.2%
-Info,  T10028: Cache relevant are 3 meshes (59712 faces). Average output ACMR is 0.864784
-Info,  T10028: Leaving post processing pipeline
+Info,  T4152: TriangulateProcess finished. All polygons have been triangulated.
+Info,  T4152: Points: 0, Lines: 0, Triangles: 3, Polygons: 0 (Meshes, X = removed)
+Info,  T4152: GenVertexNormalsProcess finished. Vertex normals have been calculated
+Info,  T4152: CalcTangentsProcess finished. Tangents have been calculated
+Info,  T4152: JoinVerticesProcess finished | Verts in: 123454 out: 40530 | ~67.2%
+Info,  T4152: Cache relevant are 3 meshes (59712 faces). Average output ACMR is 0.864784
+Info,  T4152: Leaving post processing pipeline

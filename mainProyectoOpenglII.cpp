@@ -100,6 +100,8 @@ void cargar_materiales(int idx) {
 
 	// Material Columna
 	if (idx == 1){
+		//float mdiffuse2[] = {0,1,0,1};
+		//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse2);
 		glGenTextures(1, &texName2);
 		glBindTexture(GL_TEXTURE_2D, texName2);
 
@@ -118,7 +120,11 @@ void cargar_materiales(int idx) {
 	}
 
 	// Material Conejo
+	
 	if (idx == 2){
+	//float mdiffuse1[] = {1,0,0,1};
+	//float mdiffuse1[] = {1,1,1,1};
+	//	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse1);
 		glGenTextures(1, &texName4);
 		glBindTexture(GL_TEXTURE_2D, texName4);
 
@@ -212,9 +218,9 @@ void Keyboard(unsigned char key, int x, int y)
 		exit (0);
 		break;
 	case 'q':
-		light_x =
+		light_x = 0.0;
 
-  }
+  };
 
   scene_list = 0;
   glutPostRedisplay();
@@ -228,17 +234,25 @@ void render(){
 
 	glLoadIdentity ();                       
 	gluLookAt (0, 80, 250, 0.0, 15.0, 0.0, 0.0, 1.0, 0.0);
-
-	GLfloat light_ambient[]  = { 0.0, 0.0, 1.0, 0.0 };
-	GLfloat light_diffuse[]  = { 0.0, 1.0, 0.0, 1.0 };
-	GLfloat light_specular[] = { 1.0, 1.0, 0.3, 0.0 };
-	GLfloat light_position[] = { 0.0, 50.0, 0.0, 1.0 };
-
-	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-	glLightfv(GL_LIGHT0, GL_POSITION, light_position);  
 	
+
+	GLfloat light1_ambient[] =  {0.0f, 0.0f, 0.0f, 1.0f};
+  	GLfloat light1_diffuse[] =  {1.0f, 1.0f, 1.0f, 1.0f};
+  	GLfloat light1_position[] = {0.0f, 200.0f, 0.0f, 1.0f};
+  	GLfloat light1_direction[] = {0.0f,-1.0f, 0.0f};
+	GLfloat light_specular[] = { 1.0, 1.0, 0.3, 0.0 };
+   	
+   	glLightfv(GL_LIGHT0, GL_AMBIENT, light1_ambient);
+   	glLightfv(GL_LIGHT0, GL_DIFFUSE, light1_diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+   	glLightfv(GL_LIGHT0, GL_POSITION, light1_position);
+   	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light1_direction);
+   	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 50.0f);
+   	glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, 25.0f);
+	glEnable(GL_LIGHT0);
+	
+
+
 	//Suaviza las lineas
 	glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable( GL_LINE_SMOOTH );	
