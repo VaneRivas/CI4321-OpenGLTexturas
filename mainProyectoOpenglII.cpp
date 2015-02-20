@@ -47,6 +47,32 @@ static GLuint texName4;
 int iheight4, iwidth4;
 unsigned char* image4 = NULL;
 
+//------------------------
+
+
+int iheightPosx, iwidthPosx, iheightPosy, iwidthPosy, iheightPosz, iwidthPosz,
+	iheightNegx, iwidthNegx, iheightNegy, iwidthNegy, iheightNegz, iwidthNegz;
+unsigned char* imgPositiveX  = NULL;
+unsigned char* imgNegativeX = NULL;
+unsigned char* imgPositiveY = NULL;
+unsigned char* imgNegativeY = NULL;
+unsigned char* imgPositiveZ = NULL;
+unsigned char* imgNegativeZ = NULL;
+
+/* Cube map Texture ID's
+*/
+static GLuint texPosY,texNegY,texPosZ,texNegZ,texPosX,texNegX;
+/**
+* Plane texture ID's
+*/
+static GLuint planeTexPosX,planeTexPosY,planeTexPosZ,planeTexNegX,planeTexNegY,planeTexNegZ;
+
+
+bool reflexion = true,
+	iluminacion = true;
+
+
+//----------------------
 float cutOff = 50.0f,
 	  exponent = 25.0f,
 	  compAmbient = 1.0f,
@@ -82,6 +108,26 @@ void init(){
    glEnable(GL_LIGHTING);
    glEnable(GL_LIGHT0);
    glEnable(GL_DEPTH_TEST);
+
+   glEnable(GL_TEXTURE_CUBE_MAP);
+
+   	// Enable texture generation for S,T,R coords
+	glEnable(GL_TEXTURE_GEN_S);
+	glEnable(GL_TEXTURE_GEN_T);
+	glEnable(GL_TEXTURE_GEN_R);
+	// Sets the coordinates to be generated and how
+	glTexGeni(GL_S,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
+	glTexGeni(GL_T,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
+	glTexGeni(GL_R,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
+
+	// This glut implementation has an strange issue
+	// the Teapot (glutSolidTeapot) is draw using 
+	// clock-wise face ordering. Other primitives are
+	// draw with Counter clock-wise face ordering...
+	// Case this is an isolated issue (which I don't
+	// believe) please, revert to GL_CCW
+	glFrontFace(GL_CW);
+
 
 }
 
@@ -132,10 +178,15 @@ void cargar_materiales(int idx) {
 
 	if (idx == 2){
 	//float mdiffuse1[] = {1,0,0,1};
-	float mdiffuse1[] = {conejo_CompR,conejo_CompG,conejo_CompB,1};
 	
+
+
+		/// Componente ambiental de los objetos
+		//GLfloat mat_ambient[] = { 0.28, 0.75, 0.82, 1.0 };	
+		//GLfloat mat_ambient[] = { 0.0, 1.0, 0.0, 1.0 };	
+		//glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
 	
-		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse1);
+
 		glGenTextures(1, &texName4);
 		glBindTexture(GL_TEXTURE_2D, texName4);
 
@@ -227,10 +278,14 @@ void render(){
 	glLoadIdentity ();                       
 	gluLookAt (0, 80, 250, 0.0, 15.0, 0.0, 0.0, 1.0, 0.0);
 
-		
+	
+	float mdiffuse1[] = {conejo_CompR,conejo_CompG,conejo_CompB,1};
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse1);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, mdiffuse1);
+
 	GLfloat light1_ambient[] =  {0.0f, 0.0f, 0.0f, 1.0f};
 	//GLfloat light1_diffuse[] =  {luz_CompR, luz_CompR, luz_CompR, 1.0f};
-	GLfloat light1_diffuse[] =  {1.0f, 1.0f, 0.0f, 1.0f};
+	GLfloat light1_diffuse[] =  {1.0f, 1.0f, 1.0f, 1.0f};
 	GLfloat light1_position[] = {0.0f, 200.0f, 0.0f, 1.0f};
 	GLfloat light1_direction[] = {spot_light_x,-1.0f, spot_light_z};
 	GLfloat light_specular[] = { 1.0, 1.0, 0.3, 0.0 };
@@ -246,10 +301,110 @@ void render(){
 	glEnable(GL_LIGHT0);
 	
 
-	/// Componente ambiental de los objetos
-		//GLfloat mat_ambient[] = { 0.28, 0.75, 0.82, 1.0 };	
-		GLfloat mat_ambient[] = { 0.0, 1.0, 0.0, 1.0 };	
-		glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	
+	// Create and load the 6 textures of the cube map
+
+
+	
+	
+	int iheightPosx, iwidthPosx, iheightPosy, iwidthPosy, iheightPosz, iwidthPosz,
+	iheightNegx, iwidthNegx, iheightNegy, iwidthNegy, iheightNegz, iwidthNegz;
+
+	imgPositiveX = glmReadPPM("posx.ppm", &iwidthPosx, &iheightPosx);
+	imgNegativeX = glmReadPPM("negx.ppm", &iwidthNegx, &iheightNegx);
+	imgPositiveY = glmReadPPM("posy.ppm", &iwidthPosy, &iheightPosy);
+	imgNegativeY = glmReadPPM("negy.ppm", &iwidthNegy, &iheightNegy);
+	imgPositiveZ = glmReadPPM("posz.ppm", &iwidthPosz, &iheightPosz);
+	imgNegativeZ = glmReadPPM("negz.ppm", &iwidthNegz, &iheightNegz);
+
+
+
+
+	// Create the cube map textures, positive X
+	glGenTextures(1,&texPosX);
+	glBindTexture(GL_TEXTURE_CUBE_MAP_POSITIVE_X,texPosX);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, iwidthPosx, iheightPosx, 1, GL_RGB, GL_UNSIGNED_BYTE, imgPositiveX);
+	// Create the cube map textures, negative X
+	glGenTextures(1,&texNegX);
+	glBindTexture(GL_TEXTURE_CUBE_MAP_NEGATIVE_X,texNegX);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, iwidthNegx, iheightNegx, 1, GL_RGB, GL_UNSIGNED_BYTE, imgNegativeX);
+	// Create the cube map textures, positive Y
+	glGenTextures(1,&texPosY);
+	glBindTexture(GL_TEXTURE_CUBE_MAP_POSITIVE_Y,texPosY);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, iwidthPosy, iheightPosy, 1, GL_RGB, GL_UNSIGNED_BYTE, imgPositiveY);
+	// Create the cube map textures, negative Y
+	glGenTextures(1,&texNegY);
+	glBindTexture(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,texNegY);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, iwidthNegy, iheightNegy, 1, GL_RGB, GL_UNSIGNED_BYTE, imgNegativeY);
+	// Create the cube map textures, positive Z
+	glGenTextures(1,&texPosZ);
+	glBindTexture(GL_TEXTURE_CUBE_MAP_POSITIVE_Z,texPosZ);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, iwidthPosz, iheightPosz, 1, GL_RGB, GL_UNSIGNED_BYTE, imgPositiveZ);
+	// Create the cube map textures, negative Z
+	glGenTextures(1,&texNegZ);
+	glBindTexture(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,texNegZ);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, iwidthNegz, iheightNegz, 1, GL_RGB, GL_UNSIGNED_BYTE, imgNegativeZ);
+
+	// Sets the texture's behavior for wrapping (optional)
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	// Sets the texture's max/min filters
+	glTexParameteri(GL_TEXTURE_CUBE_MAP,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+
+	// Now we re-create the textures to texturize the planes
+	
+
+
+	//-------------------------------------------------------------------------------------
+	// Create plane texture, postive X
+	glGenTextures(1,&planeTexPosX);
+	glBindTexture(GL_TEXTURE_2D,planeTexPosX);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthPosx, iheightPosx, 0, GL_RGB, GL_UNSIGNED_BYTE, imgPositiveX);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	// Create plane texture, negative X
+	glGenTextures(1,&planeTexNegX);
+	glBindTexture(GL_TEXTURE_2D,planeTexNegX);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthNegx, iheightNegx, 0, GL_RGB, GL_UNSIGNED_BYTE, imgNegativeX);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	// Create plane texture, postive X
+	glGenTextures(1,&planeTexPosY);
+	glBindTexture(GL_TEXTURE_2D,planeTexPosY);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthPosy, iheightPosy, 0, GL_RGB, GL_UNSIGNED_BYTE, imgPositiveY);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	// Create plane texture, negative X
+	glGenTextures(1,&planeTexNegY);
+	glBindTexture(GL_TEXTURE_2D,planeTexNegY);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthNegy, iheightNegy, 0, GL_RGB, GL_UNSIGNED_BYTE, imgNegativeY);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	// Create plane texture, postive X
+	glGenTextures(1,&planeTexPosZ);
+	glBindTexture(GL_TEXTURE_2D,planeTexPosZ);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthPosz, iheightPosz, 0, GL_RGB, GL_UNSIGNED_BYTE, imgPositiveZ);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	// Create plane texture, negative X
+	glGenTextures(1,&planeTexNegZ);
+	glBindTexture(GL_TEXTURE_2D,planeTexNegZ);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthNegz, iheightNegz, 0, GL_RGB, GL_UNSIGNED_BYTE, imgNegativeZ);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+
+
+
+
+
+
+
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
 
 
 	//Suaviza las lineas
@@ -286,7 +441,6 @@ void animacion(int value) {
     glutPostRedisplay();
 	
 }
-
 void get_bounding_box_for_node (const aiNode* nd, 
 	aiVector3D* min, 
 	aiVector3D* max, 
@@ -337,7 +491,6 @@ void get_bounding_box (aiVector3D* min, aiVector3D* max)
 
 
 }
-
 int loadasset (const char* path)
 {
 	// we are taking one of the postprocessing presets to avoid
@@ -357,7 +510,6 @@ int loadasset (const char* path)
 
 	return 1;
 }
-
 void imprimirEstado() {
 	cout << "\n\n\n\n\n\n\n\n";
 	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
@@ -377,8 +529,8 @@ void imprimirEstado() {
 	cout << "Color Rojo luz [2]: " <<  "ALGO" << "\n";
 	cout << "Color Verde luz [3]: " << "ALGO" << "\n";
 	cout << "Color Azul luz [4]: " <<  "ALGO" << "\n";
-	cout << "Reflexion [c]: " << "(enable ? ""On : Off)" << "REFLEXION"<<"\n";
-	cout << "Iluminacion [v]: " << "(enableR ?" "On : Off)" <<"ILUMINACION"<< "\n";
+	cout << "Reflexion [c]: " << (reflexion ? "On" : "Off") <<"\n";
+	cout << "Iluminacion [v]: " << (iluminacion ? "On" : "Off") << "\n";
 	cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 }
 void Keyboard(unsigned char key, int x, int y)
@@ -389,16 +541,16 @@ void Keyboard(unsigned char key, int x, int y)
 		exit (0);
 		break;
 	case 'q':
-		cutOff += 100.0f;
+		cutOff += 5.0f;
 		break;
 	case 'w':
-		cutOff -= 1.0f;
+		cutOff -= 5.0f;
 		break;
 	case 'a':
-		exponent += 0.5f;
+		exponent += 5.0f;
 		break;
 	case 's':
-		exponent -= 0.5f;
+		exponent -= 5.0f;
 		break;
 	case 'z':
 		compAmbient += 0.1f;
@@ -437,11 +589,34 @@ void Keyboard(unsigned char key, int x, int y)
 		conejo_CompB -= 0.1f;
 		break;
 	case 'c':
+		if (reflexion){
+			glDisable(GL_TEXTURE_CUBE_MAP);
+		   	glDisable(GL_TEXTURE_GEN_S);
+			glDisable(GL_TEXTURE_GEN_T);
+			glDisable(GL_TEXTURE_GEN_R);
+			reflexion = false;
+			break;
+		}else{
+			glEnable(GL_TEXTURE_CUBE_MAP);
+		   	glEnable(GL_TEXTURE_GEN_S);
+			glEnable(GL_TEXTURE_GEN_T);
+			glEnable(GL_TEXTURE_GEN_R);
+			reflexion = true;
+			break;
+		}
 		
-		break;
 	case 'v':
-		
-		break;
+		if (iluminacion){
+			glDisable(GL_LIGHTING);
+			glDisable(GL_LIGHT0);
+			iluminacion = false;
+			break;
+		}else{
+			glEnable(GL_LIGHTING);
+			glEnable(GL_LIGHT0);
+			iluminacion = true;
+			break;
+		}
 	case 'b':
 		
 		break;
@@ -474,10 +649,6 @@ void Keyboard(unsigned char key, int x, int y)
   scene_list = 0;
   glutPostRedisplay();
 }
-
-
-
-
 int main (int argc, char** argv) {
 
 	glutInit(&argc, argv);
