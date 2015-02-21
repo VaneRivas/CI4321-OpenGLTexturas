@@ -472,17 +472,41 @@ void Draw_Skybox(float x, float y, float z, float width, float height, float len
 	z = z - length / 2;
 
 
+	int iheightPosx, iwidthPosx, iheightPosy, iwidthPosy, iheightPosz, iwidthPosz,
+	iheightNegx, iwidthNegx, iheightNegy, iwidthNegy, iheightNegz, iwidthNegz;
+
+	imgPositiveX = glmReadPPM("posx.ppm", &iwidthPosx, &iheightPosx);
+	imgNegativeX = glmReadPPM("negx.ppm", &iwidthNegx, &iheightNegx);
+	imgPositiveY = glmReadPPM("posy.ppm", &iwidthPosy, &iheightPosy);
+	imgNegativeY = glmReadPPM("negy.ppm", &iwidthNegy, &iheightNegy);
+	imgPositiveZ = glmReadPPM("posz.ppm", &iwidthPosz, &iheightPosz);
+	imgNegativeZ = glmReadPPM("negz.ppm", &iwidthNegz, &iheightNegz);
+
+	glGenTextures(1,&planeTexPosZ);
+	glBindTexture(GL_TEXTURE_2D,planeTexPosZ);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthPosz, iheightPosz, 0, GL_RGB, GL_UNSIGNED_BYTE, imgPositiveZ);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+
+	
 	// Draw Front side
-	//glBindTexture(GL_TEXTURE_2D, SkyboxTexture[SKYFRONT]);
-	glBegin(GL_QUADS);	
+	//glBindTexture(GL_TEXTURE_2D, planeTexPosZ);
+/*	glBegin(GL_QUADS);	
 		glTexCoord2f(1.0f, 0.0f); glVertex3f(x,		  y,		z+length);
 		glTexCoord2f(1.0f, 1.0f); glVertex3f(x,		  y+height, z+length);
 		glTexCoord2f(0.0f, 1.0f); glVertex3f(x+width, y+height, z+length); 
 		glTexCoord2f(0.0f, 0.0f); glVertex3f(x+width, y,		z+length);
 	glEnd();
-
-	// Draw Back side
-	//glBindTexture(GL_TEXTURE_2D, SkyboxTexture[SKYBACK]);
+*/
+/*
+	glGenTextures(1,&planeTexNegZ);
+	glBindTexture(GL_TEXTURE_2D,planeTexNegZ);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthNegz, iheightNegz, 0, GL_RGB, GL_UNSIGNED_BYTE, imgNegativeZ);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+*/
+	// Draw Back side ------------------------------------FRENTE-----------------------------------------------
+	//glBindTexture(GL_TEXTURE_2D, imgNegativeZ);
 	glBegin(GL_QUADS);		
 		glTexCoord2f(1.0f, 0.0f); glVertex3f(x+width, y,		z);
 		glTexCoord2f(1.0f, 1.0f); glVertex3f(x+width, y+height, z); 
@@ -490,7 +514,15 @@ void Draw_Skybox(float x, float y, float z, float width, float height, float len
 		glTexCoord2f(0.0f, 0.0f); glVertex3f(x,		  y,		z);
 	glEnd();
 
-	// Draw Left side
+
+	glGenTextures(1,&planeTexNegX);
+	glBindTexture(GL_TEXTURE_2D,planeTexNegX);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthNegx, iheightNegx, 0, GL_RGB, GL_UNSIGNED_BYTE, imgNegativeX);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+
+
+	// Draw Left side --------------------------------------LADO DERECHO---------------------------------
 	//glBindTexture(GL_TEXTURE_2D, SkyboxTexture[SKYLEFT]);
 	glBegin(GL_QUADS);		
 		glTexCoord2f(1.0f, 1.0f); glVertex3f(x,		  y+height,	z);	
@@ -499,7 +531,15 @@ void Draw_Skybox(float x, float y, float z, float width, float height, float len
 		glTexCoord2f(1.0f, 0.0f); glVertex3f(x,		  y,		z);		
 	glEnd();
 
-	// Draw Right side
+	
+	glGenTextures(1,&planeTexPosX);
+	glBindTexture(GL_TEXTURE_2D,planeTexPosX);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthPosx, iheightPosx, 0, GL_RGB, GL_UNSIGNED_BYTE, imgPositiveX);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+
+
+	// Draw Right side -----------------------------------LADO IZQUIERDO------------------------------
 	//glBindTexture(GL_TEXTURE_2D, SkyboxTexture[SKYRIGHT]);
 	glBegin(GL_QUADS);		
 		glTexCoord2f(0.0f, 0.0f); glVertex3f(x+width, y,		z);
@@ -508,23 +548,39 @@ void Draw_Skybox(float x, float y, float z, float width, float height, float len
 		glTexCoord2f(0.0f, 1.0f); glVertex3f(x+width, y+height,	z);
 	glEnd();
 
+	/*
+/*	
+	glGenTextures(1,&planeTexPosY);
+	glBindTexture(GL_TEXTURE_2D,planeTexPosY);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthPosy, iheightPosy, 0, GL_RGB, GL_UNSIGNED_BYTE, imgPositiveY);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+*/
 	// Draw Up side
 	//glBindTexture(GL_TEXTURE_2D, SkyboxTexture[SKYUP]);
-	glBegin(GL_QUADS);		
+/*	glBegin(GL_QUADS);		
 		glTexCoord2f(0.0f, 0.0f); glVertex3f(x+width, y+height, z);
 		glTexCoord2f(1.0f, 0.0f); glVertex3f(x+width, y+height, z+length); 
 		glTexCoord2f(1.0f, 1.0f); glVertex3f(x,		  y+height,	z+length);
 		glTexCoord2f(0.0f, 1.0f); glVertex3f(x,		  y+height,	z);
 	glEnd();
-
+/*
+	glGenTextures(1,&planeTexNegY);
+	glBindTexture(GL_TEXTURE_2D,planeTexNegY);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthNegy, iheightNegy, 0, GL_RGB, GL_UNSIGNED_BYTE, imgNegativeY);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+*/
 	// Draw Down side
 	//glBindTexture(GL_TEXTURE_2D, SkyboxTexture[SKYDOWN]);
-	glBegin(GL_QUADS);		
+/*	glBegin(GL_QUADS);		
 		glTexCoord2f(0.0f, 0.0f); glVertex3f(x,		  y,		z);
 		glTexCoord2f(1.0f, 0.0f); glVertex3f(x,		  y,		z+length);
 		glTexCoord2f(1.0f, 1.0f); glVertex3f(x+width, y,		z+length); 
 		glTexCoord2f(0.0f, 1.0f); glVertex3f(x+width, y,		z);
 	glEnd();
+
+*/
   glDisable(GL_COLOR_MATERIAL); //********************************LINEA AGREGADA************************************
 }
 
@@ -571,7 +627,7 @@ void render(){
 		glDisable(GL_TEXTURE_GEN_S);
 		glDisable(GL_TEXTURE_GEN_T);
 		glDisable(GL_TEXTURE_GEN_R);
-	Draw_Skybox(0,-40,0,500,500,500);	// Draw the Skybox
+	Draw_Skybox(0,-20,0,500,500,800);	// Draw the Skybox
 		glEnable(GL_TEXTURE_CUBE_MAP);
 		glEnable(GL_TEXTURE_GEN_S);
 		glEnable(GL_TEXTURE_GEN_T);
