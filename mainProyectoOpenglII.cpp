@@ -123,12 +123,16 @@ float cutOff = 50.0f,
 	  conejo_CompG = 1.0f,
 	  conejo_CompB = 1.0f,
 	  Intensity_luz =1.0f,
+	  ra =0.0f,
+	  ga =0.0f,
+	  ba=0.0f,
+	  ma=0.0f,
 	  luz_CompR=1.0f,
 	  luz_CompG=1.0f,
 	  luz_CompB=1.0f;
 		
 
-bool reflexion = true,
+bool reflexion = false,
 	iluminacion = true;
 
 void changeViewport(int w, int h) {
@@ -152,12 +156,12 @@ void init(){
    glEnable(GL_LIGHT0);
    glEnable(GL_DEPTH_TEST);
 
-   glEnable(GL_TEXTURE_CUBE_MAP);
+   //glEnable(GL_TEXTURE_CUBE_MAP);
 
    	// Enable texture generation for S,T,R coords
-	glEnable(GL_TEXTURE_GEN_S);
-	glEnable(GL_TEXTURE_GEN_T);
-	glEnable(GL_TEXTURE_GEN_R);
+	//glEnable(GL_TEXTURE_GEN_S);
+	//glEnable(GL_TEXTURE_GEN_T);
+	//glEnable(GL_TEXTURE_GEN_R);
 	// Sets the coordinates to be generated and how
 	glTexGeni(GL_S,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
 	glTexGeni(GL_T,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
@@ -171,6 +175,8 @@ void init(){
 	// believe) please, revert to GL_CCW
 	glFrontFace(GL_CW);
 
+	
+	
 
 }
 
@@ -181,6 +187,12 @@ void cargar_materiales(int idx) {
 	// Material Piso
 	if (idx == 0){	
 	
+	/********************************************************************************
+	las lineas de GL_COLOR_MATERIAL  fueron agredas para restringir que el material del conejo solo le afecte al conejo
+	**********************************************************************************/
+
+
+   glEnable(GL_COLOR_MATERIAL); //********************************LINEA AGREGADA************************************
    glGenTextures(1, &texName);
    glBindTexture(GL_TEXTURE_2D, texName);
 
@@ -193,13 +205,15 @@ void cargar_materiales(int idx) {
 
    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidth, iheight, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
      
-
+   
+	glDisable(GL_COLOR_MATERIAL);//********************************LINEA AGREGADA************************************
 
 	}
 
 	// Material Columna
 	if (idx == 1){
-	
+		
+	glEnable(GL_COLOR_MATERIAL);//********************************LINEA AGREGADA************************************
 		glGenTextures(1, &texName2);
 		glBindTexture(GL_TEXTURE_2D, texName2);
 
@@ -214,7 +228,8 @@ void cargar_materiales(int idx) {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidth2, iheight2, 0, GL_RGB, GL_UNSIGNED_BYTE, image2);
 		
 		//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-		
+	
+	glDisable(GL_COLOR_MATERIAL);//********************************LINEA AGREGADA************************************
 	}
 
 	// Material Conejo
@@ -222,10 +237,9 @@ void cargar_materiales(int idx) {
 	if (idx == 2){
 	//float mdiffuse1[] = {1,0,0,1};
 	
-
-
+	
 		/// Componente ambiental de los objetos
-		//GLfloat mat_ambient[] = { 0.28, 0.75, 0.82, 1.0 };	
+		//GLfloat mat_ambient[] = { 0.1 + ra, 0.1 + ga, 0.0 + ba, 1.0 + ma };	
 		//GLfloat mat_ambient[] = { 0.0, 1.0, 0.0, 1.0 };	
 		//glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
 	
@@ -241,14 +255,27 @@ void cargar_materiales(int idx) {
    		image4 = glmReadPPM("texAO_bunny.ppm", &iwidth4, &iheight4);
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidth4, iheight4, 0, GL_RGB, GL_UNSIGNED_BYTE, image4);
+		
+			//----------------------ambiente del conejo
+		/***************************************************
+		el ambient y el difusse del conejo cambian simultaneamente para
+		que el color del material, y la luz que "refleja" coincidan
+		***************************************************************/
 
-   
+		float mdiffuse1[] = {conejo_CompR,conejo_CompG,conejo_CompB,1};//********************************LINEA AGREGADA************************************
+		//float mdiffuse1[] = {,conejo_CompG,conejo_CompB,1};
+		//float mambient[] = {conejo_CompR,conejo_CompG,conejo_CompB,1};
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse1);//********************************LINEA AGREGADA************************************
+		glMaterialfv(GL_FRONT, GL_AMBIENT,  mdiffuse1); //********************************LINEA AGREGADA************************************
+	//--------------------------------------------------------
+
+			
 	//Activamos las texturas
 		glEnable(GL_TEXTURE_2D);
 
-		//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+	//	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 		
-		
+	
 	}
 		
 }
@@ -438,6 +465,7 @@ GLuint loadCubemap(char* faces[]){
 
 void Draw_Skybox(float x, float y, float z, float width, float height, float length)
 {
+	glEnable(GL_COLOR_MATERIAL); //********************************LINEA AGREGADA************************************
 	// Center the Skybox around the given x,y,z position
 	x = x - width  / 2;
 	y = y - height / 2;
@@ -497,11 +525,12 @@ void Draw_Skybox(float x, float y, float z, float width, float height, float len
 		glTexCoord2f(1.0f, 1.0f); glVertex3f(x+width, y,		z+length); 
 		glTexCoord2f(0.0f, 1.0f); glVertex3f(x+width, y,		z);
 	glEnd();
-
+  glDisable(GL_COLOR_MATERIAL); //********************************LINEA AGREGADA************************************
 }
 
 
 void render(){
+
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -511,11 +540,7 @@ void render(){
 
 	//cube_map("posx.ppm","posy.ppm","posz.ppm","negx.ppm","negy.ppm","negz.ppm");
 	
-	//----------------------ambiente del conejo
-	float mdiffuse1[] = {conejo_CompR,conejo_CompG,conejo_CompB,1};
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse1);
-	glMaterialfv(GL_FRONT, GL_AMBIENT, mdiffuse1);
-	//--------------------------------------------------------
+
 
 	GLfloat light1_ambient[] =  {0.0f, 0.0f, 0.0f, 0.0f};
 	GLfloat light1_diffuse[] =  {Intensity_luz, Intensity_luz, Intensity_luz, Intensity_luz/Intensity_luz};
@@ -533,16 +558,27 @@ void render(){
 	glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent);
 	glEnable(GL_LIGHT0);
 	
-	//cube_map("posx.ppm","posy.ppm","posz.ppm","negx.ppm","negy.ppm","negz.ppm");
+	cube_map("posx.ppm","posy.ppm","posz.ppm","negx.ppm","negy.ppm","negz.ppm");
 	//loadCubemap(faces); 
 
+
+	//******************************************BLOQUE AGREGADO*********************************
+	if (reflexion){
 	glPushMatrix();
 	glRotated(180,0.0,0.0,1.0);
-	
-	//Draw_Skybox(0,0,0,500,500,500);	// Draw the Skybox
+	//glRotated(180,0.0,1.0,0.0);
+		glDisable(GL_TEXTURE_CUBE_MAP);
+		glDisable(GL_TEXTURE_GEN_S);
+		glDisable(GL_TEXTURE_GEN_T);
+		glDisable(GL_TEXTURE_GEN_R);
+	Draw_Skybox(0,-40,0,500,500,500);	// Draw the Skybox
+		glEnable(GL_TEXTURE_CUBE_MAP);
+		glEnable(GL_TEXTURE_GEN_S);
+		glEnable(GL_TEXTURE_GEN_T);
+		glEnable(GL_TEXTURE_GEN_R);
 	glPopMatrix();
-	 
-
+	}
+	//************************************FIN BLOQUE AGREGADO**************************************
 	
 	//Suaviza las lineas
 	glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -661,6 +697,12 @@ void imprimirEstado() {
 	cout << "Color Conejo canal R [t/g]: " << conejo_CompR << "\n";
 	cout << "Color Conejo canal G [y/h]: " << conejo_CompG << "\n";
 	cout << "Color Conejo canal B [u/j]: " << conejo_CompB << "\n";
+	//********************************bloque agregado para probar*******************
+	cout << "Color Conejo canal ambR [i/I]: " << ra << "\n";
+	cout << "Color Conejo canal ambG [o/O]: " << ga<< "\n";
+	cout << "Color Conejo canal ambB [p/F]: " << ba << "\n";
+	cout << " material conejo [ñ/Ñ]: " << ma << "\n";
+	//********************************bloque agregado para probar*******************
 	cout << " Intensidad de la luz [b/n]: " << Intensity_luz << "\n";
 	cout << "Color Blanco luz [1]: " << "ALGO" << "\n";
 	cout << "Color Rojo luz [2]: " <<  "ALGO" << "\n";
@@ -708,24 +750,54 @@ void Keyboard(unsigned char key, int x, int y)
 		spot_light_z -= 0.1f;
 		break;
 	case 't':
-		conejo_CompR += 0.1f;
+		conejo_CompR += 5.0f;
 		break;
 	case 'g':
-		conejo_CompR -= 0.1f;
+		conejo_CompR -= 5.1f;
 		break;
 	case 'y':
-		conejo_CompG += 0.1f;
+		conejo_CompG += 5.1f;
 		break;
 	case 'h':
-		conejo_CompG -= 0.1f;
+		conejo_CompG -= 5.1f;
 		break;
 	case 'u':
-		conejo_CompB += 0.1f;
+		conejo_CompB += 5.1f;
 		break;
 	case 'j':
-		conejo_CompB -= 0.1f;
+		conejo_CompB -= 5.1f;
 		break;
+
+	case 'i':
+		ra += 0.5f;
+		break;
+	case 'I':
+		ra -= 0.5f;
+		break;
+	case 'o':
+		ga += 0.5f;
+		break;
+	case 'O':
+		ga -= 0.5f;
+		break;
+	case 'p':
+		ba += 0.5f;
+		break;
+	case 'P':
+		ba -= 0.5f;
+		break;
+	case 'm':
+		ma += 0.5f;
+		break;
+	case 'M':
+		ma -= 0.5f;
+		break;
+
+
+
 	case 'c':
+		
+	//******************************************BLOQUE AGREGADO*********************************
 		if (reflexion){
 			glDisable(GL_TEXTURE_CUBE_MAP);
 		   	glDisable(GL_TEXTURE_GEN_S);
@@ -754,6 +826,7 @@ void Keyboard(unsigned char key, int x, int y)
 			iluminacion = true;
 			break;
 		}
+	//******************************************FIN BLOQUE AGREGADO******************************
 	case 'b':
 		Intensity_luz += 1.0f;
 		break;
@@ -783,6 +856,7 @@ void Keyboard(unsigned char key, int x, int y)
 
   };
   imprimirEstado();
+  glDeleteLists(scene_list,1);
   scene_list = 0;
   glutPostRedisplay();
 }
