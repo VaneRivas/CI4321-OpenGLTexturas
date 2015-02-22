@@ -1,13 +1,13 @@
-Info,  T7576: Load escenario.obj
-Info,  T7576: Found a matching importer for this file format
-Info,  T7576: Import root directory is '.\'
-Info,  T7576: Entering post processing pipeline
-Error, T7576: Failed to triangulate polygon (no ear found). Probably not a simple polygon?
+Info,  T6320: Load escenario.obj
+Info,  T6320: Found a matching importer for this file format
+Info,  T6320: Import root directory is '.\'
+Info,  T6320: Entering post processing pipeline
+Error, T6320: Failed to triangulate polygon (no ear found). Probably not a simple polygon?
 Skipping one or more lines with the same contents
-Info,  T7576: TriangulateProcess finished. All polygons have been triangulated.
-Info,  T7576: Points: 0, Lines: 0, Triangles: 3, Polygons: 0 (Meshes, X = removed)
-Info,  T7576: GenVertexNormalsProcess finished. Vertex normals have been calculated
-Info,  T7576: CalcTangentsProcess finished. Tangents have been calculated
-Info,  T7576: JoinVerticesProcess finished | Verts in: 123454 out: 40530 | ~67.2%
-Info,  T7576: Cache relevant are 3 meshes (59712 faces). Average output ACMR is 0.864784
-Info,  T7576: Leaving post processing pipeline
+Info,  T6320: TriangulateProcess finished. All polygons have been triangulated.
+Info,  T6320: Points: 0, Lines: 0, Triangles: 3, Polygons: 0 (Meshes, X = removed)
+Info,  T6320: GenVertexNormalsProcess finished. Vertex normals have been calculated
+Info,  T6320: CalcTangentsProcess finished. Tangents have been calculated
+Info,  T6320: JoinVerticesProcess finished | Verts in: 123454 out: 40530 | ~67.2%
+Info,  T6320: Cache relevant are 3 meshes (59712 faces). Average output ACMR is 0.864784
+Info,  T6320: Leaving post processing pipeline

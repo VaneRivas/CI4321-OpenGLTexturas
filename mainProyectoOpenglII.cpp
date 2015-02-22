@@ -6,15 +6,11 @@
 #include <GL\freeglut.h>
 #include <iostream>
 #include <vector>
+
 // assimp include files. These three are usually needed.
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-
-#include "glm.h"
-#define NELEMS(x)  (sizeof(x) / sizeof(x[0]))
-
-using namespace std;
 
 // the global Assimp scene object
 const aiScene* scene01 = NULL;
@@ -31,21 +27,35 @@ aiVector3D scene_min, scene_max, scene_center;
 #define DEF_floorGridXSteps	10.0
 #define DEF_floorGridZSteps	10.0
 
+using namespace std;
 
-// Carga de textura de los objetos
-static GLuint texName;
-int iheight, iwidth;
-unsigned char* image = NULL;
+#include "glm.h"
 
-static GLuint texName2;
-int iheight2, iwidth2;
-unsigned char* image2 = NULL;
+#define NELEMS(x)  (sizeof(x) / sizeof(x[0]))
 
-static GLuint texName4;
-int iheight4, iwidth4;
-unsigned char* image4 = NULL;
+// --------------- Variables para carga de textura de los objetos: piso, conejo y columnas ------------
 
-//------------------------img de Cub mapping------------------
+static GLuint textPiso;
+static GLuint textColumna;
+static GLuint textConejo;
+
+int iheightPiso, iwidthPiso,
+	iheightColumna, iwidthColumna,
+	iheightConejo, iwidthConejo;
+
+unsigned char* imgPiso = NULL;
+unsigned char* imgColumna = NULL;
+unsigned char* imgConejo = NULL;
+
+// Variables para carga de textura del del Cub Map
+
+/* Cube map Texture ID's*/
+static GLuint texPosY,texNegY,texPosZ,
+	  texNegZ,texPosX,texNegX;
+
+int iheightPosx, iwidthPosx, iheightPosy, iwidthPosy, iheightPosz, iwidthPosz,
+	iheightNegx, iwidthNegx, iheightNegy, iwidthNegy, iheightNegz, iwidthNegz;
+
 unsigned char* imgPositiveX  = NULL;
 unsigned char* imgNegativeX = NULL;
 unsigned char* imgPositiveY = NULL;
@@ -53,26 +63,24 @@ unsigned char* imgNegativeY = NULL;
 unsigned char* imgPositiveZ = NULL;
 unsigned char* imgNegativeZ = NULL;
 
-/* Cube map Texture ID's
-*/
-static GLuint texPosY,texNegY,texPosZ,texNegZ,texPosX,texNegX;
+//---------- Variables para la carga de textura de los planos en el Cub Map y en el SkyBox ---------------------
 
-
-//---------------sky box --------------------------------------------
-/**
-* Plane texture ID's
-*/
+/** * Plane texture ID's */
 static GLuint planeTexPosX,planeTexPosY,planeTexPosZ,planeTexNegX,planeTexNegY,planeTexNegZ;
 
-float cutOff = 50.0f,
-	  exponent = 25.0f,
-	  compAmbient = 1.0f,
-	  spot_light_x = 0.0f,
-	  spot_light_z = 0.0f,
-	  conejo_CompR = 1.0f,
-	  conejo_CompG = 1.0f,
-	  conejo_CompB = 1.0f,
-	  Intensity_luz =1.0f,
+// variables para el spotlight
+static float spot_light_x = 0.0f;
+static float spot_light_z = 0.0f;
+
+//cutOff ,exponent e intensidad del spotlight
+static float cutOff;
+static float exponent;
+static float intensidad;
+
+float compAmbient = 1.0f,
+	  conejo_CompR = 0.2f,
+	  conejo_CompG = 0.2f,
+	  conejo_CompB = 0.2f,
 	  ra =0.0f,
 	  ga =0.0f,
 	  ba=0.0f,
@@ -81,9 +89,9 @@ float cutOff = 50.0f,
 	  luz_CompG=1.0f,
 	  luz_CompB=1.0f;
 		
-
-bool reflexion = false,
-	iluminacion = true;
+// Booleanos para la reflexion (cubmapping) e iluminacion
+bool reflexion,
+	iluminacion;
 
 void changeViewport(int w, int h) {
 	
@@ -106,125 +114,106 @@ void init(){
    glEnable(GL_LIGHT0);
    glEnable(GL_DEPTH_TEST);
 
-   //glEnable(GL_TEXTURE_CUBE_MAP);
+   cutOff = 50.0f;
+   exponent = 25.0f;
+   intensidad = 1.0f;
 
-   	// Enable texture generation for S,T,R coords
-	//glEnable(GL_TEXTURE_GEN_S);
-	//glEnable(GL_TEXTURE_GEN_T);
-	//glEnable(GL_TEXTURE_GEN_R);
-	// Sets the coordinates to be generated and how
-	glTexGeni(GL_S,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
-	glTexGeni(GL_T,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
-	glTexGeni(GL_R,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
+   reflexion = false;
+   iluminacion = true;
 
-	// This glut implementation has an strange issue
-	// the Teapot (glutSolidTeapot) is draw using 
-	// clock-wise face ordering. Other primitives are
-	// draw with Counter clock-wise face ordering...
-	// Case this is an isolated issue (which I don't
-	// believe) please, revert to GL_CCW
-	glFrontFace(GL_CW);
+   glTexGeni(GL_S,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
+   glTexGeni(GL_T,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
+   glTexGeni(GL_R,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
+
+
+   imgColumna = glmReadPPM("texAO_columna.ppm", &iwidthColumna, &iheightColumna);
+   imgPiso = glmReadPPM("texAO_plano.ppm", &iwidthPiso, &iheightPiso);
+   imgConejo = glmReadPPM("texAO_bunny.ppm", &iwidthConejo, &iheightConejo);
+
+   	imgPositiveX = glmReadPPM("posx.ppm", &iwidthPosx, &iheightPosx);
+	imgNegativeX = glmReadPPM("negx.ppm", &iwidthNegx, &iheightNegx);
+	imgPositiveY = glmReadPPM("posy.ppm", &iwidthPosy, &iheightPosy);
+	imgNegativeY = glmReadPPM("negy.ppm", &iwidthNegy, &iheightNegy);
+	imgPositiveZ = glmReadPPM("posz.ppm", &iwidthPosz, &iheightPosz);
+	imgNegativeZ = glmReadPPM("negz.ppm", &iwidthNegz, &iheightNegz);
+
+   glFrontFace(GL_CW);
 
 }
 
-
 void cargar_materiales(int idx) {
 
+	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+	GLfloat mat_ambient[] = { conejo_CompR,conejo_CompG,conejo_CompB,1.0 };
 
 	// Material Piso
 	if (idx == 0){	
 	
-	/********************************************************************************
-	las lineas de GL_COLOR_MATERIAL  fueron agredas para restringir que el material del conejo solo le afecte al conejo
-	**********************************************************************************/
+   	glEnable(GL_COLOR_MATERIAL); 
+  		
+  		glGenTextures(1, &textPiso);
+   		glBindTexture(GL_TEXTURE_2D, textPiso);
 
+		glTexEnvf(GL_TEXTURE_2D, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+   		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+   		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+   		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+   		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	  
 
-   glEnable(GL_COLOR_MATERIAL); //********************************LINEA AGREGADA************************************
-   glGenTextures(1, &texName);
-   glBindTexture(GL_TEXTURE_2D, texName);
-
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	
-   image = glmReadPPM("texAO_plano.ppm", &iwidth, &iheight);
-
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidth, iheight, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+   		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthPiso, iheightPiso, 0, GL_RGB, GL_UNSIGNED_BYTE, imgPiso);
      
-   
-	glDisable(GL_COLOR_MATERIAL);//********************************LINEA AGREGADA************************************
+		glMaterialfv(GL_FRONT, GL_AMBIENT, mat_specular);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_specular);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+   	glDisable(GL_COLOR_MATERIAL);
 
 	}
 
 	// Material Columna
 	if (idx == 1){
 		
-	glEnable(GL_COLOR_MATERIAL);//********************************LINEA AGREGADA************************************
-		glGenTextures(1, &texName2);
-		glBindTexture(GL_TEXTURE_2D, texName2);
+	glEnable(GL_COLOR_MATERIAL);
+		
+		glGenTextures(1, &textColumna);
+		glBindTexture(GL_TEXTURE_2D, textColumna);
 
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-	
-		image2 = glmReadPPM("texAO_columna.ppm", &iwidth2, &iheight2);
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidth2, iheight2, 0, GL_RGB, GL_UNSIGNED_BYTE, image2);
+			
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthColumna, iheightColumna, 0, GL_RGB, GL_UNSIGNED_BYTE, imgColumna);
 		
-		//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+
+		glMaterialfv(GL_FRONT, GL_AMBIENT, mat_specular);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_specular);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+
+	glDisable(GL_COLOR_MATERIAL);
 	
-	glDisable(GL_COLOR_MATERIAL);//********************************LINEA AGREGADA************************************
 	}
 
 	// Material Conejo
-
 	if (idx == 2){
-	//float mdiffuse1[] = {1,0,0,1};
-	
-	
-		/// Componente ambiental de los objetos
-		//GLfloat mat_ambient[] = { 0.1 + ra, 0.1 + ga, 0.0 + ba, 1.0 + ma };	
-		//GLfloat mat_ambient[] = { 0.0, 1.0, 0.0, 1.0 };	
-		//glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-	
 
-		glGenTextures(1, &texName4);
-		glBindTexture(GL_TEXTURE_2D, texName4);
+		glGenTextures(1, &textConejo);
+		glBindTexture(GL_TEXTURE_2D, textConejo);
 
+		glTexEnvf(GL_TEXTURE_2D, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-   		image4 = glmReadPPM("texAO_bunny.ppm", &iwidth4, &iheight4);
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidth4, iheight4, 0, GL_RGB, GL_UNSIGNED_BYTE, image4);
-		
-			//----------------------ambiente del conejo
-		/***************************************************
-		el ambient y el difusse del conejo cambian simultaneamente para
-		que el color del material, y la luz que "refleja" coincidan
-		***************************************************************/
-
-		float mdiffuse1[] = {conejo_CompR,conejo_CompG,conejo_CompB,1};//********************************LINEA AGREGADA************************************
-		//float mdiffuse1[] = {,conejo_CompG,conejo_CompB,1};
-		//float mambient[] = {conejo_CompR,conejo_CompG,conejo_CompB,1};
-		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mdiffuse1);//********************************LINEA AGREGADA************************************
-		glMaterialfv(GL_FRONT, GL_AMBIENT,  mdiffuse1); //********************************LINEA AGREGADA************************************
-	//--------------------------------------------------------
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthConejo, iheightConejo, 0, GL_RGB, GL_UNSIGNED_BYTE, imgConejo);
+	
+		glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
 
 			
-	//Activamos las texturas
-		glEnable(GL_TEXTURE_2D);
-
-	//	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-		
-	
 	}
-		
+	//Activamos las texturas
+	glEnable(GL_TEXTURE_2D);	
 }
 
 void recursive_render (const aiScene *sc, const aiNode* nd)
@@ -285,24 +274,38 @@ void recursive_render (const aiScene *sc, const aiNode* nd)
 	glPopMatrix();
 }
 
-void cube_map( char* PosX,  char* PosY, char* PosZ,char* NegX,  char* NegY, char* NegZ) {
 
-	// Create and load the 6 textures of the cube map
+void spot_light(){
+	
+	//GLfloat light_ambient[] =  {0.0f, 0.0f, 0.0f, 0.0f};
+	GLfloat light_diffuse[] =  {intensidad, intensidad, intensidad, intensidad/intensidad};
+	//GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+
+	GLfloat light_position[] = {0.0f, 200.0f, 0.0f, 1.0f};
+	GLfloat light_direction[] = {spot_light_x,-1.0f, spot_light_z};
+
+	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 }; ///////////////
+    GLfloat mat_shininess[] = { 50.0 };	////////////////////////////  esto da la sensacion de brillo
 
 	
-	int iheightPosx, iwidthPosx, iheightPosy, iwidthPosy, iheightPosz, iwidthPosz,
-	iheightNegx, iwidthNegx, iheightNegy, iwidthNegy, iheightNegz, iwidthNegz;
+   glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular); ////////////
+   glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);//////////////
 
-	imgPositiveX = glmReadPPM(PosX, &iwidthPosx, &iheightPosx);
-	imgNegativeX = glmReadPPM(NegX, &iwidthNegx, &iheightNegx);
-	imgPositiveY = glmReadPPM(PosY, &iwidthPosy, &iheightPosy);
-	imgNegativeY = glmReadPPM(NegY, &iwidthNegy, &iheightNegy);
-	imgPositiveZ = glmReadPPM(PosZ, &iwidthPosz, &iheightPosz);
-	imgNegativeZ = glmReadPPM(NegZ, &iwidthNegz, &iheightNegz);
+	//glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+   	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
 
+	//glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+   	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+   	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light_direction);
+	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutOff);
+	glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent);
+	glEnable(GL_LIGHT0);
+	
+}
+void cube_map() {
 
-
-
+	// Create and load the 6 textures of the cube map
+	
 	// Create the cube map textures, positive X
 	glGenTextures(1,&texPosX);
 	glBindTexture(GL_TEXTURE_CUBE_MAP_POSITIVE_X,texPosX);
@@ -338,9 +341,6 @@ void cube_map( char* PosX,  char* PosY, char* PosZ,char* NegX,  char* NegY, char
 
 	// Now we re-create the textures to texturize the planes
 	
-	
-
-	//-------------------------------------------------------------------------------------
 	glPushMatrix();
 	glRotated(180,0.0,0.0,1.0);
 	// Create plane texture, postive X
@@ -356,8 +356,6 @@ void cube_map( char* PosX,  char* PosY, char* PosZ,char* NegX,  char* NegY, char
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	// Create plane texture, postive X
-
-	
 	glGenTextures(1,&planeTexPosY);
 	glBindTexture(GL_TEXTURE_2D,planeTexPosY);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthPosy, iheightPosy, 0, GL_RGB, GL_UNSIGNED_BYTE, imgPositiveY);
@@ -370,15 +368,11 @@ void cube_map( char* PosX,  char* PosY, char* PosZ,char* NegX,  char* NegY, char
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	// Create plane texture, postive X
-
-	
 	glGenTextures(1,&planeTexPosZ);
 	glBindTexture(GL_TEXTURE_2D,planeTexPosZ);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthPosz, iheightPosz, 0, GL_RGB, GL_UNSIGNED_BYTE, imgPositiveZ);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-
-	
 	// Create plane texture, negative X
 	glGenTextures(1,&planeTexNegZ);
 	glBindTexture(GL_TEXTURE_2D,planeTexNegZ);
@@ -396,14 +390,6 @@ void Draw_Skybox(float x, float y, float z, float width, float height, float len
 	x = x - width  / 2;
 	y = y - height / 2;
 	z = z - length / 2;
-
-
-	int iheightPosx, iwidthPosx, iheightPosz, iwidthPosz, iheightNegx, iwidthNegx;
-
-	imgPositiveX = glmReadPPM("posx.ppm", &iwidthPosx, &iheightPosx);
-	imgNegativeX = glmReadPPM("negx.ppm", &iwidthNegx, &iheightNegx);
-	imgPositiveZ = glmReadPPM("posz.ppm", &iwidthPosz, &iheightPosz);
-
 
 // Draw Back side ------------------------------------FRENTE-----------------------------------------------
 	glGenTextures(1,&planeTexPosZ);
@@ -466,44 +452,6 @@ void render(){
 	gluLookAt (0, 80, 250, 0.0, 15.0, 0.0, 0.0, 1.0, 0.0);
 
 	
-	GLfloat light1_ambient[] =  {0.0f, 0.0f, 0.0f, 0.0f};
-	GLfloat light1_diffuse[] =  {Intensity_luz, Intensity_luz, Intensity_luz, Intensity_luz/Intensity_luz};
-	GLfloat light1_position[] = {0.0f, 200.0f, 0.0f, 1.0f};
-	GLfloat light1_direction[] = {spot_light_x,-1.0f, spot_light_z};
-	GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-
-
-   	glLightfv(GL_LIGHT0, GL_AMBIENT, light1_ambient);
-   	glLightfv(GL_LIGHT0, GL_DIFFUSE, light1_diffuse);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-   	glLightfv(GL_LIGHT0, GL_POSITION, light1_position);
-   	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light1_direction);
-	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutOff);
-	glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent);
-	glEnable(GL_LIGHT0);
-	
-	cube_map("posx.ppm","posy.ppm","posz.ppm","negx.ppm","negy.ppm","negz.ppm");
-	//cube_map("posx.ppm","posy.ppm","posz.ppm","negx.ppm","negy.ppm",LO QUE SE VE EN EL PLANO DEL PISO);
-
-
-	//******************************************BLOQUE AGREGADO*********************************
-	if (reflexion){
-	glPushMatrix();
-	glRotated(180,0.0,0.0,1.0);
-	//glRotated(180,0.0,1.0,0.0);
-		glDisable(GL_TEXTURE_CUBE_MAP);
-		glDisable(GL_TEXTURE_GEN_S);
-		glDisable(GL_TEXTURE_GEN_T);
-		glDisable(GL_TEXTURE_GEN_R);
-	Draw_Skybox(0,-20,0,500,500,800);	// Draw the Skybox
-		glEnable(GL_TEXTURE_CUBE_MAP);
-		glEnable(GL_TEXTURE_GEN_S);
-		glEnable(GL_TEXTURE_GEN_T);
-		glEnable(GL_TEXTURE_GEN_R);
-	glPopMatrix();
-	}
-	//************************************FIN BLOQUE AGREGADO**************************************
-	
 	//Suaviza las lineas
 	glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable( GL_LINE_SMOOTH );	
@@ -520,6 +468,31 @@ void render(){
 	    recursive_render(scene01, scene01->mRootNode);
 	    glEndList();
 	}
+	
+
+	if (iluminacion){
+		spot_light();
+	}
+	 
+	if (reflexion){
+	glPushMatrix();
+	glRotated(180,0.0,0.0,1.0);
+	//glRotated(180,0.0,1.0,0.0);
+		glDisable(GL_TEXTURE_CUBE_MAP);
+		glDisable(GL_TEXTURE_GEN_S);
+		glDisable(GL_TEXTURE_GEN_T);
+		glDisable(GL_TEXTURE_GEN_R);
+	Draw_Skybox(0,-20,0,500,500,800);	// Draw the Skybox
+		glEnable(GL_TEXTURE_CUBE_MAP);
+		glEnable(GL_TEXTURE_GEN_S);
+		glEnable(GL_TEXTURE_GEN_T);
+		glEnable(GL_TEXTURE_GEN_R);
+	glPopMatrix();
+	}
+	cube_map();
+	
+
+
 	glCallList(scene_list);
 	
 	
@@ -621,13 +594,7 @@ void imprimirEstado() {
 	cout << "Color Conejo canal R [t/g]: " << conejo_CompR << "\n";
 	cout << "Color Conejo canal G [y/h]: " << conejo_CompG << "\n";
 	cout << "Color Conejo canal B [u/j]: " << conejo_CompB << "\n";
-	//********************************bloque agregado para probar*******************
-	cout << "Color Conejo canal ambR [i/I]: " << ra << "\n";
-	cout << "Color Conejo canal ambG [o/O]: " << ga<< "\n";
-	cout << "Color Conejo canal ambB [p/F]: " << ba << "\n";
-	cout << " material conejo [ñ/Ñ]: " << ma << "\n";
-	//********************************bloque agregado para probar*******************
-	cout << " Intensidad de la luz [b/n]: " << Intensity_luz << "\n";
+	cout << " Intensidad de la luz [b/n]: " << intensidad << "\n";
 	cout << "Color Blanco luz [1]: " << "ALGO" << "\n";
 	cout << "Color Rojo luz [2]: " <<  "ALGO" << "\n";
 	cout << "Color Verde luz [3]: " << "ALGO" << "\n";
@@ -644,16 +611,16 @@ void Keyboard(unsigned char key, int x, int y)
 		exit (0);
 		break;
 	case 'q':
-		cutOff += 5.0f;
+		cutOff += 2.0f;
 		break;
 	case 'w':
-		cutOff -= 5.0f;
+		cutOff -= 2.0f;
 		break;
 	case 'a':
-		exponent += 5.0f;
+		exponent += 2.0f;
 		break;
 	case 's':
-		exponent -= 5.0f;
+		exponent -= 2.0f;
 		break;
 	case 'z':
 		compAmbient += 0.1f;
@@ -674,54 +641,24 @@ void Keyboard(unsigned char key, int x, int y)
 		spot_light_z -= 0.1f;
 		break;
 	case 't':
-		conejo_CompR += 5.0f;
+		conejo_CompR += 0.5f;
 		break;
 	case 'g':
-		conejo_CompR -= 5.1f;
+		conejo_CompR -= 0.5f;
 		break;
 	case 'y':
-		conejo_CompG += 5.1f;
+		conejo_CompG += 0.5f;
 		break;
 	case 'h':
-		conejo_CompG -= 5.1f;
+		conejo_CompG -= 0.5f;
 		break;
 	case 'u':
-		conejo_CompB += 5.1f;
+		conejo_CompB += 0.5f;
 		break;
 	case 'j':
-		conejo_CompB -= 5.1f;
+		conejo_CompB -= 0.5f;
 		break;
-
-	case 'i':
-		ra += 0.5f;
-		break;
-	case 'I':
-		ra -= 0.5f;
-		break;
-	case 'o':
-		ga += 0.5f;
-		break;
-	case 'O':
-		ga -= 0.5f;
-		break;
-	case 'p':
-		ba += 0.5f;
-		break;
-	case 'P':
-		ba -= 0.5f;
-		break;
-	case 'm':
-		ma += 0.5f;
-		break;
-	case 'M':
-		ma -= 0.5f;
-		break;
-
-
-
 	case 'c':
-		
-	//******************************************BLOQUE AGREGADO*********************************
 		if (reflexion){
 			glDisable(GL_TEXTURE_CUBE_MAP);
 		   	glDisable(GL_TEXTURE_GEN_S);
@@ -737,7 +674,6 @@ void Keyboard(unsigned char key, int x, int y)
 			reflexion = true;
 			break;
 		}
-		
 	case 'v':
 		if (iluminacion){
 			glDisable(GL_LIGHTING);
@@ -750,12 +686,11 @@ void Keyboard(unsigned char key, int x, int y)
 			iluminacion = true;
 			break;
 		}
-	//******************************************FIN BLOQUE AGREGADO******************************
 	case 'b':
-		Intensity_luz += 1.0f;
+		intensidad += 1.0f;
 		break;
 	case 'n':
-		Intensity_luz -= 1.0f;
+		intensidad -= 1.0f;
 		break;
 	case '1':
 		luz_CompR=1.0f;
