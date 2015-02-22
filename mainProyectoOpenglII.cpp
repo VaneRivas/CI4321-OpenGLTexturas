@@ -1,24 +1,15 @@
-// Cubica
-
 #include <stdlib.h>
-
 #include <GL\glew.h>
 #include <GL\freeglut.h>
 #include <iostream>
 #include <vector>
-
-// assimp include files. These three are usually needed.
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include "glm.h"
 
-// the global Assimp scene object
-const aiScene* scene01 = NULL;
-const aiScene* scene02 = NULL;
-const aiScene* scene03 = NULL;
 
-GLuint scene_list = 0;
-aiVector3D scene_min, scene_max, scene_center;
+using namespace std;
 
 #define aisgl_min(x,y) (x<y?x:y)
 #define aisgl_max(x,y) (y>x?y:x)
@@ -27,11 +18,21 @@ aiVector3D scene_min, scene_max, scene_center;
 #define DEF_floorGridXSteps	10.0
 #define DEF_floorGridZSteps	10.0
 
-using namespace std;
-
-#include "glm.h"
-
 #define NELEMS(x)  (sizeof(x) / sizeof(x[0]))
+
+
+// the global Assimp scene object
+const aiScene* scene01 = NULL;
+const aiScene* scene02 = NULL;
+const aiScene* scene03 = NULL;
+
+GLuint scene_list = 0;
+
+aiVector3D scene_min,
+           scene_max,
+           scene_center;
+
+
 
 // --------------- Variables para carga de textura de los objetos: piso, conejo y columnas ------------
 
@@ -39,24 +40,41 @@ static GLuint textPiso;
 static GLuint textColumna;
 static GLuint textConejo;
 
-int iheightPiso, iwidthPiso,
-	iheightColumna, iwidthColumna,
-	iheightConejo, iwidthConejo;
+int iheightPiso,
+ 	iwidthPiso,
+	iheightColumna,
+	iwidthColumna,
+	iheightConejo,
+	iwidthConejo;
 
-unsigned char* imgPiso = NULL;
-unsigned char* imgColumna = NULL;
-unsigned char* imgConejo = NULL;
+unsigned char* imgPiso 		= NULL;
+unsigned char* imgColumna 	= NULL;
+unsigned char* imgConejo 	= NULL;
 
-// Variables para carga de textura del del Cub Map
+// Variables para carga de textura del del Cube Map
 
 /* Cube map Texture ID's*/
-static GLuint texPosY,texNegY,texPosZ,
-	  texNegZ,texPosX,texNegX;
+static GLuint texPosY,
+			  texNegY,
+			  texPosZ,
+	  		  texNegZ,
+	  		  texPosX,
+	  		  texNegX;
 
-int iheightPosx, iwidthPosx, iheightPosy, iwidthPosy, iheightPosz, iwidthPosz,
-	iheightNegx, iwidthNegx, iheightNegy, iwidthNegy, iheightNegz, iwidthNegz;
+int iheightPosx,
+	iwidthPosx,
+	iheightPosy,
+	iwidthPosy,
+	iheightPosz,
+	iwidthPosz,
+	iheightNegx,
+	iwidthNegx,
+	iheightNegy,
+	iwidthNegy,
+	iheightNegz,
+	iwidthNegz;
 
-unsigned char* imgPositiveX  = NULL;
+unsigned char* imgPositiveX = NULL;
 unsigned char* imgNegativeX = NULL;
 unsigned char* imgPositiveY = NULL;
 unsigned char* imgNegativeY = NULL;
@@ -77,21 +95,18 @@ static float cutOff;
 static float exponent;
 static float intensidad;
 
-float compAmbient = 1.0f,
-	  conejo_CompR = 0.2f,
-	  conejo_CompG = 0.2f,
-	  conejo_CompB = 0.2f,
-	  ra =0.0f,
-	  ga =0.0f,
-	  ba=0.0f,
-	  ma=0.0f,
-	  luz_CompR=1.0f,
-	  luz_CompG=1.0f,
-	  luz_CompB=1.0f;
+static float compAmbient 	= 1.0f,
+	  		 conejo_CompR 	= 1.0f,
+	  		 conejo_CompG 	= 1.0f,
+	  		 conejo_CompB 	= 1.0f,
+	  		 luz_CompR		= 0.5f,
+	  		 luz_CompG		= 0.5f,
+	  		 luz_CompB		= 0.5f;
 		
-// Booleanos para la reflexion (cubmapping) e iluminacion
-bool reflexion,
-	iluminacion;
+// Booleano para la reflexion (cubemapping) 
+bool reflexion;
+int iluminacion;
+
 
 void changeViewport(int w, int h) {
 	
@@ -116,35 +131,40 @@ void init(){
 
    cutOff = 50.0f;
    exponent = 25.0f;
-   intensidad = 1.0f;
+   intensidad = 0.5f;
 
    reflexion = false;
-   iluminacion = true;
-
-   glTexGeni(GL_S,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
-   glTexGeni(GL_T,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
-   glTexGeni(GL_R,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
+   iluminacion = 1;
 
 
    imgColumna = glmReadPPM("texAO_columna.ppm", &iwidthColumna, &iheightColumna);
    imgPiso = glmReadPPM("texAO_plano.ppm", &iwidthPiso, &iheightPiso);
    imgConejo = glmReadPPM("texAO_bunny.ppm", &iwidthConejo, &iheightConejo);
 
-   	imgPositiveX = glmReadPPM("posx.ppm", &iwidthPosx, &iheightPosx);
-	imgNegativeX = glmReadPPM("negx.ppm", &iwidthNegx, &iheightNegx);
-	imgPositiveY = glmReadPPM("posy.ppm", &iwidthPosy, &iheightPosy);
-	imgNegativeY = glmReadPPM("negy.ppm", &iwidthNegy, &iheightNegy);
-	imgPositiveZ = glmReadPPM("posz.ppm", &iwidthPosz, &iheightPosz);
-	imgNegativeZ = glmReadPPM("negz.ppm", &iwidthNegz, &iheightNegz);
+   imgPositiveX = glmReadPPM("posx.ppm", &iwidthPosx, &iheightPosx);
+   imgNegativeX = glmReadPPM("negx.ppm", &iwidthNegx, &iheightNegx);
+   imgPositiveY = glmReadPPM("posy.ppm", &iwidthPosy, &iheightPosy);
+   imgNegativeY = glmReadPPM("negy.ppm", &iwidthNegy, &iheightNegy);
+   imgPositiveZ = glmReadPPM("posz.ppm", &iwidthPosz, &iheightPosz);
+   imgNegativeZ = glmReadPPM("negz.ppm", &iwidthNegz, &iheightNegz);
+
+   glTexGeni(GL_S,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
+   glTexGeni(GL_T,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
+   glTexGeni(GL_R,GL_TEXTURE_GEN_MODE,GL_REFLECTION_MAP);
 
    glFrontFace(GL_CW);
 
 }
 
+
+
 void cargar_materiales(int idx) {
 
-	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
 	GLfloat mat_ambient[] = { conejo_CompR,conejo_CompG,conejo_CompB,1.0 };
+	//GLfloat mat_ambient[] = { compAmbient,compAmbient,compAmbient,0.0}; ------------------------------
+	GLfloat diffuseM[] = {1.0f,1.0f,1.0f,1.0f}; //lilo
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuseM); //lilo
+
 
 	// Material Piso
 	if (idx == 0){	
@@ -153,6 +173,7 @@ void cargar_materiales(int idx) {
   		
   		glGenTextures(1, &textPiso);
    		glBindTexture(GL_TEXTURE_2D, textPiso);
+   		glColor4f(1.0,1.0,1.0,1.0);
 
 		glTexEnvf(GL_TEXTURE_2D, GL_TEXTURE_ENV_MODE, GL_MODULATE);
    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -162,10 +183,7 @@ void cargar_materiales(int idx) {
 	  
 
    		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthPiso, iheightPiso, 0, GL_RGB, GL_UNSIGNED_BYTE, imgPiso);
-     
-		glMaterialfv(GL_FRONT, GL_AMBIENT, mat_specular);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_specular);
-		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+  
    	glDisable(GL_COLOR_MATERIAL);
 
 	}
@@ -177,6 +195,7 @@ void cargar_materiales(int idx) {
 		
 		glGenTextures(1, &textColumna);
 		glBindTexture(GL_TEXTURE_2D, textColumna);
+		glColor4f(1.0,1.0,1.0,1.0);
 
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -185,11 +204,6 @@ void cargar_materiales(int idx) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iwidthColumna, iheightColumna, 0, GL_RGB, GL_UNSIGNED_BYTE, imgColumna);
-		
-
-		glMaterialfv(GL_FRONT, GL_AMBIENT, mat_specular);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_specular);
-		glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
 
 	glDisable(GL_COLOR_MATERIAL);
 	
@@ -200,6 +214,7 @@ void cargar_materiales(int idx) {
 
 		glGenTextures(1, &textConejo);
 		glBindTexture(GL_TEXTURE_2D, textConejo);
+		glColor4f(conejo_CompR,conejo_CompB,conejo_CompG,1.0);
 
 		glTexEnvf(GL_TEXTURE_2D, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -277,27 +292,27 @@ void recursive_render (const aiScene *sc, const aiNode* nd)
 
 void spot_light(){
 	
-	//GLfloat light_ambient[] =  {0.0f, 0.0f, 0.0f, 0.0f};
-	GLfloat light_diffuse[] =  {intensidad, intensidad, intensidad, intensidad/intensidad};
-	//GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+	GLfloat light_ambient[] =  {0.0f, 0.0f, 0.0f, 0.0f};
+	GLfloat light_diffuse[] =  {luz_CompR +intensidad, luz_CompG +intensidad,luz_CompB + intensidad, intensidad/intensidad};
+	GLfloat light_specular[]  = { 0.2, 0.2, 0.2, 0.8 };
 
 	GLfloat light_position[] = {0.0f, 200.0f, 0.0f, 1.0f};
 	GLfloat light_direction[] = {spot_light_x,-1.0f, spot_light_z};
 
-	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 }; ///////////////
-    GLfloat mat_shininess[] = { 50.0 };	////////////////////////////  esto da la sensacion de brillo
+	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 }; //////////////
+    GLfloat mat_shininess[] = { 100.0 };	////////////////////////////
 
 	
-   glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular); ////////////
-   glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);//////////////
+    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular); ////////////
+    glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);//////////////
 
-	//glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
    	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
 
-	//glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
    	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
    	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light_direction);
-	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutOff);
+	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutOff*iluminacion);
 	glLightf(GL_LIGHT0, GL_SPOT_EXPONENT, exponent);
 	glEnable(GL_LIGHT0);
 	
@@ -470,10 +485,13 @@ void render(){
 	}
 	
 
-	if (iluminacion){
-		spot_light();
-	}
-	 
+	
+	spot_light();
+	
+
+	
+	cube_map();
+
 	if (reflexion){
 	glPushMatrix();
 	glRotated(180,0.0,0.0,1.0);
@@ -489,7 +507,7 @@ void render(){
 		glEnable(GL_TEXTURE_GEN_R);
 	glPopMatrix();
 	}
-	cube_map();
+	
 	
 
 
@@ -611,16 +629,16 @@ void Keyboard(unsigned char key, int x, int y)
 		exit (0);
 		break;
 	case 'q':
-		cutOff += 2.0f;
+		if (cutOff < 51) cutOff += 5.0f;
 		break;
 	case 'w':
-		cutOff -= 2.0f;
+		if (cutOff > 0) cutOff -= 5.0f;
 		break;
 	case 'a':
-		exponent += 2.0f;
+		if (exponent < 145) exponent += 5.0f;
 		break;
 	case 's':
-		exponent -= 2.0f;
+		if (exponent > 0) exponent -= 5.0f;
 		break;
 	case 'z':
 		compAmbient += 0.1f;
@@ -629,34 +647,34 @@ void Keyboard(unsigned char key, int x, int y)
 		compAmbient -= 0.1f;
 		break;
 	case 'e':
-		spot_light_x += 0.1f;
+		if (spot_light_x <1.4f) spot_light_x += 0.1f;
 		break;
 	case 'd':
-		spot_light_x -= 0.1f;
+		if (spot_light_x > -1.3f) spot_light_x -= 0.1f;
 		break;
 	case 'r':
-		spot_light_z += 0.1f;
+		if (spot_light_z < 1.1f)spot_light_z += 0.1f;
 		break;
 	case 'f':
-		spot_light_z -= 0.1f;
+		if (spot_light_z < 1.1f)spot_light_z -= 0.1f;
 		break;
 	case 't':
-		conejo_CompR += 0.5f;
+		/*if (conejo_CompR < 1.0f) {*/ conejo_CompR += 0.1f;// }
 		break;
 	case 'g':
-		conejo_CompR -= 0.5f;
+		/*if (conejo_CompR > 0.0f) {*/ conejo_CompR -= 0.1f;// }
 		break;
 	case 'y':
-		conejo_CompG += 0.5f;
+			/*if (conejo_CompG < 1.0f) {*/ conejo_CompG += 0.1f;// }
 		break;
 	case 'h':
-		conejo_CompG -= 0.5f;
+		/*if (conejo_CompR > 0.0f) {*/ conejo_CompG -= 0.1f;// }
 		break;
 	case 'u':
-		conejo_CompB += 0.5f;
+			/*if (conejo_CompR < 0.0f) {*/ conejo_CompB += 0.1f;// }
 		break;
 	case 'j':
-		conejo_CompB -= 0.5f;
+			/*if (conejo_CompR > 0.0f) {*/ conejo_CompB -= 0.1f;// }
 		break;
 	case 'c':
 		if (reflexion){
@@ -674,44 +692,32 @@ void Keyboard(unsigned char key, int x, int y)
 			reflexion = true;
 			break;
 		}
+		
 	case 'v':
-		if (iluminacion){
-			glDisable(GL_LIGHTING);
-			glDisable(GL_LIGHT0);
-			iluminacion = false;
-			break;
-		}else{
-			glEnable(GL_LIGHTING);
-			glEnable(GL_LIGHT0);
-			iluminacion = true;
-			break;
-		}
+		iluminacion = !iluminacion;
+		break;
 	case 'b':
-		intensidad += 1.0f;
+		if (intensidad < 0.5f) { intensidad += 0.1f; }
 		break;
 	case 'n':
-		intensidad -= 1.0f;
+		if (intensidad > 0.0f) { intensidad -= 0.1f; }
 		break;
 	case '1':
-		luz_CompR=1.0f;
-		luz_CompG=1.0f;
-		luz_CompB=1.0f;
+		luz_CompR = 0.6f; luz_CompG = 0.6f; luz_CompB = 0.6f;
 		break;
 	case '2':
-		luz_CompR=1.0f;
-		luz_CompG=0.0f;
-		luz_CompB=0.0f;
+		luz_CompR = 0.3f; luz_CompG = 0.6f; luz_CompB = 0.15f;
 		break;
 	case '3':
-		luz_CompR=0.0f;
-		luz_CompG=1.0f;
-		luz_CompB=0.0f;
+		luz_CompR = 0.6f; luz_CompG = 0.15f; luz_CompB = 0.3f;
 		break;
 	case '4':
-		luz_CompR=0.0f;
-		luz_CompG=0.0f;
-		luz_CompB=1.0f;
+		luz_CompR = 0.15f; luz_CompG = 0.3f; luz_CompB = 0.6f;
 		break;
+	case '5':
+		luz_CompR = 0.45f; luz_CompG = 0.35f; luz_CompB = 0.1f;
+		break;
+
 
   };
   imprimirEstado();
